@@ -1,0 +1,141 @@
+﻿@model hijazi.Models.ViewModels.CompanyWizardViewModel
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a asp-action="Index" asp-controller="Home" style="text-decoration: unset;">
+            <span>&#8592; Back</span>
+        </a>
+    </div>
+    <div class="col-md-6 p-3">
+        <form asp-action="SubmitCompany" method="post">
+            @Html.HiddenFor(model => model.Id)
+            <h2>Company Info</h2>
+            <div class="row">
+                <div class="col-md-12">
+                    <label for="ArabicName">Arabic Name</label>
+                    <input class="form-control" asp-for="ArabicName" type="text" />
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <label for="EnglishName">English Name</label>
+                    <input class="form-control" asp-for="EnglishName" type="text" />
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <label for="Mobile">Mobile</label>
+                    <input class="form-control" asp-for="Mobile" type="text" />
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <label for="Email">Email</label>
+                    <input class="form-control" asp-for="Email" type="text" />
+                </div>
+            </div>
+
+            <button class="btn btn-success mt-3" type="submit">Save Company</button>
+        </form>
+    </div>
+    @if (Model.Id > 0)
+    {
+        <div class="col-md-6 p-3">
+            <form asp-action="SaveVehicle" method="post">
+                @Html.Hidden("CompanyId", Model.Id)
+                <h2>Vehicles Info</h2>
+                <div class="row">
+                    <div class="col-md-12">
+                        <label for="TypeId">Type</label>
+                        <select asp-items="Model.VehicleTypes" name="TypeId" id="TypeId" class="form-control" required></select>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <label for="PlateNumber">Plate Number</label>
+                        <input type="text" name="PlateNumber" id="PlateNumber" class="form-control" />
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <label for="VINNumber">VIN Number</label>
+                        <input type="text" name="VINNumber" id="VINNumber" class="form-control" />
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <label for="MACAddress">MAC Address</label>
+                        <input type="text" name="MACAddress" id="MACAddress" class="form-control" />
+                    </div>
+                </div>
+                <button class="btn btn-success mt-3" type="submit">Add Vehicle</button>
+            </form>
+        </div>
+
+        @if (Model.Vehicles.IsNotNullOrEmpty())
+        {
+            <div class="col-12 mt-5">
+                <div class="p-2" style="background-color: #f5f7f9;border-radius: 5px;">
+                    <h2 class="text-center">Vehicles</h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Plate Number</th>
+                                <th scope="col">VIN Number</th>
+                                <th scope="col">MAC Address</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Status</th>
+                                <th scope="col"></th>
+                                <th scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Vehicles)
+                            {
+                                <tr>
+                                    <td>@item.PlateNumber</td>
+                                    <td>@item.VINNumber</td>
+                                    <td>@item.MACAddress</td>
+                                    <td>@item.Type</td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span>Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Inactive</span>
+                                        }
+                                    </td>
+                                    <td scope="col">
+                                        @if (item.IsActive)
+                                        {
+                                            <a asp-action="AddUserToVehicle" asp-controller="Home" asp-route-VehicleId="@item.Id" asp-route-CompanyId="@item.CompanyId">
+                                                <span>Users</span>
+                                            </a>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="AciveInactiveVehicle" asp-controller="Home"
+                                           asp-route-VehicleId="@item.Id"
+                                           asp-route-CompanyId="@item.CompanyId"
+                                           asp-route-isActive="@(!item.IsActive)"
+                                           onclick="return confirm('Are you sure you want to proceed?');">
+                                            @if (item.IsActive)
+                                            {
+                                                <span>Inactive</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Active</span>
+                                            }
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+</div>
