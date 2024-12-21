@@ -1,4 +1,9 @@
 ﻿@model hijazi.Models.ViewModels.CompanyWizardViewModel
+
+<head>
+
+ 
+</head>
 <div class="row mb-3">
     <div class="col-md-12">
         <a asp-action="Index" asp-controller="Home" style="text-decoration: unset;">
@@ -6,36 +11,69 @@
         </a>
     </div>
     <div class="col-md-6 p-3">
-        <form asp-action="SubmitCompany" method="post">
-            @Html.HiddenFor(model => model.Id)
-            <h2>Company Info</h2>
-            <div class="row">
-                <div class="col-md-12">
-                    <label for="ArabicName">Arabic Name</label>
-                    <input class="form-control" asp-for="ArabicName" type="text" />
-                </div>
-            </div>
+     <form asp-action="SubmitCompany" method="post">
+    @Html.HiddenFor(model => model.Id)
+    <h2>Company Info</h2>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <label for="CompanyName">Company Name</label>
+                    <input class="form-control" asp-for="CompanyName" type="text" disabled="@(Model.Id > 0)" />
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <label for="CompanyRegistrationNumber">Company Reg. No.</label>
+                    <input class="form-control" asp-for="CompanyRegistrationNumber" type="text" disabled="@(Model.Id > 0)" />
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <label for="Mobile">Mobile</label>
+            <input class="form-control" asp-for="Mobile" type="text" disabled="@(Model.Id > 0)" />
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <label for="Email">Email</label>
+                    <input class="form-control" asp-for="Email" type="text" disabled="@(Model.Id > 0)" />
+        </div>
+    </div>
+
+            <div class="row mt-2">
+        <div class="col-md-12">
+            <label for="CountryId">Country</label>
+            <select asp-items="Model.Countries" name="CountryId" id="CountryId" class="form-control searchable-select" asp-for="CountryId" required 
+                    disabled="@(Model.Id > 0)">
+            </select>
+        </div>
+    </div>
+
+            <div class="row mt-2">
+        <div class="col-md-12">
+            <label for="CityId">City</label>
+            <select asp-items="Model.Cities" name="CityId" id="CityId" class="form-control searchable-select" asp-for="CityId" required 
+                    disabled="@(Model.Id > 0)">
+                <option value="">Select City</option>
+            </select>
+        </div>
+    </div>
+
             <div class="row mt-2">
                 <div class="col-md-12">
-                    <label for="EnglishName">English Name</label>
-                    <input class="form-control" asp-for="EnglishName" type="text" />
-                </div>
-            </div>
-            <div class="row mt-2">
-                <div class="col-md-12">
-                    <label for="Mobile">Mobile</label>
-                    <input class="form-control" asp-for="Mobile" type="text" />
-                </div>
-            </div>
-            <div class="row mt-2">
-                <div class="col-md-12">
-                    <label for="Email">Email</label>
-                    <input class="form-control" asp-for="Email" type="text" />
+                    <label for="TopUpAmount">Top Up Amount</label>
+                    <input class="form-control" asp-for="TopUpAmount" type="number"  />
                 </div>
             </div>
 
-            <button class="btn btn-success mt-3" type="submit">Save Company</button>
-        </form>
+  
+                <button class="btn btn-outline-primary mt-3" type="submit">Save Company</button>
+</form>
+
+
     </div>
     @if (Model.Id > 0)
     {
@@ -46,13 +84,14 @@
                 <div class="row">
                     <div class="col-md-12">
                         <label for="TypeId">Type</label>
-                        <select asp-items="Model.VehicleTypes" name="TypeId" id="TypeId" class="form-control" required></select>
+                        <select asp-items="Model.VehicleTypes" name="TypeId" id="TypeId" class="form-control searchable-select" required>
+                        </select>
                     </div>
                 </div>
                 <div class="row mt-2">
                     <div class="col-md-12">
                         <label for="PlateNumber">Plate Number</label>
-                        <input type="text" name="PlateNumber" id="PlateNumber" class="form-control" />
+                        <input type="text" name="PlateNumber" id="PlateNumber" class="form-control" required />
                     </div>
                 </div>
                 <div class="row mt-2">
@@ -67,7 +106,7 @@
                         <input type="text" name="MACAddress" id="MACAddress" class="form-control" />
                     </div>
                 </div>
-                <button class="btn btn-success mt-3" type="submit">Add Vehicle</button>
+                <button class="btn btn-outline-primary mt-3" type="submit">Add Vehicle</button>
             </form>
         </div>
 
@@ -139,3 +178,47 @@
         }
     }
 </div>
+
+<script>
+
+    $(document).ready(function() {
+        $('.searchable-select').select2({
+            placeholder: "Select a type", // Optional placeholder text
+            allowClear: true // Optional clear button
+        });
+
+           // Listen for the country selection change
+            $('#CountryId').change(function() {
+                var countryId = $(this).val();
+
+                if (countryId) {
+                    // Make an AJAX request to get cities based on the selected country
+                    $.ajax({
+                        url: '/City/GetCitiesByCountry', // The API endpoint to get cities by country
+                        type: 'GET',
+                        data: { countryId: countryId },
+                        success: function(data) {
+                            // Clear the existing options
+                            $('#CityId').empty();
+                            $('#CityId').append('<option value="">Select City</option>'); // Default option
+
+                            // Loop through cities and add them as options to the City dropdown
+                            $.each(data, function(index, city) {
+                                $('#CityId').append('<option value="' + city.id + '">' + city.name + '</option>');
+                            });
+                        },
+                        error: function() {
+                            alert('Error retrieving cities.');
+                        }
+                    });
+                } else {
+                    // If no country is selected, clear the City dropdown
+                    $('#CityId').empty();
+                    $('#CityId').append('<option value="">Select City</option>');
+                }
+            });
+    });
+
+</script>
+
+                                

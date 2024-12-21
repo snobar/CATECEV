@@ -10,7 +10,7 @@
         <form asp-action="SaveVehicle" method="post">
             @Html.Hidden("Id", Model.Id)
             @Html.Hidden("CompanyId", Model.CompanyId)
-            <h2>@(Model.Company)'s Vehicles Info</h2>
+            <h2>Vehicle Info</h2>
             <div class="row">
                 <div class="col-md-12">
                     <label for="TypeId">Type</label>
@@ -43,7 +43,7 @@
         <form asp-action="SaveUser" method="post">
             @Html.Hidden("VehicleId", Model.Id)
             @Html.Hidden("Vehicle.CompanyId", Model.CompanyId)
-            <h2>Vehicle's User Info</h2>
+            <h2>User Info</h2>
             <div class="row">
                 <div class="col-md-12">
                     <label for="ArabicName">Arabic Name</label>

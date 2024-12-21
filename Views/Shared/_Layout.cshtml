@@ -3,16 +3,55 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - hijazi</title>
+    <title>@ViewData["Title"] - Shabik</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
     <link href="~/css/site.css" rel="stylesheet" />
     <link href="~/css/_layout.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <style>
+        /* Set the height for the select element itself */
+        .searchable-select {
+            height: 40px; /* Set the desired height for the input */
+            line-height: 40px; /* Vertically align the text */
+        }
+        /* Target the Select2 container to apply height */
+        .select2-container--default .select2-selection--single {
+            height: 40px !important; /* Match the height of the input */
+            line-height: 40px !important; /* Vertically center the text */
+        }
+
+            /* Adjust the arrow in the Select2 box */
+            .select2-container--default .select2-selection--single .select2-selection__arrow {
+                height: 40px !important; /* Ensure arrow height matches */
+                top: 0 !important; /* Align the arrow with the top of the input */
+            }
+
+            /* Center the text inside the select box */
+            .select2-container--default .select2-selection--single .select2-selection__rendered {
+                line-height: 40px !important; /* Align the text inside */
+            }
+
+        /* Adjust the height of each option in the dropdown list */
+        .select2-results__option {
+            height: 40px !important; /* Match the height of each option */
+        }
+
+        /* Adjust the dropdown list itself */
+        .select2-container--default .select2-dropdown {
+            max-height: 200px !important; /* Optional: Set a max height for the dropdown */
+            overflow-y: auto !important; /* Make dropdown scrollable if there are too many options */
+        }
+
+    </style>
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">hijazi</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Shabik</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -37,6 +76,10 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

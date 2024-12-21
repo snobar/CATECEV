@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics;
 using hijazi.Data;
@@ -35,22 +36,33 @@ namespace hijazi.Controllers
         public async Task<IActionResult> Manage(int? CompanyId = null)
         {
             var vehicleTypes = await _appContext.VehicleType.ToListAsync();
+            var countries = await _appContext.Country.ToListAsync();
             var manageModel = new CompanyWizardViewModel
             {
                 Id = 0,
-                VehicleTypes = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(vehicleTypes, "Id", "EnglishName")
+                VehicleTypes = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(vehicleTypes, "Id", "EnglishName"),
+                Countries = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(countries, "Id", "EnglishName"),
             };
+
 
             if (CompanyId.IsNotNullOrEmpty())
             {
                 manageModel.Id = CompanyId.Value;
 
                 var companyData = await GetCompany(CompanyId.Value);
-                
-                manageModel.ArabicName = companyData.ArabicName;
-                manageModel.EnglishName = companyData.EnglishName;
+                var citiesData = await GetCityByCountyId(companyData.CountryId.Value);
+
+
+                manageModel.CompanyName = companyData.CompanyName;
+                manageModel.CompanyRegistrationNumber = companyData.CompanyRegistrationNumber;
+                manageModel.CountryId = companyData.CountryId;
+                manageModel.CountryName = companyData.Country.IsNotNullOrEmpty() && companyData.Country.EnglishName.IsNotNullOrEmpty() ? companyData.Country.EnglishName : "";
+                manageModel.CityId = companyData.CityId;
+                manageModel.CityName = companyData.City.IsNotNullOrEmpty() && companyData.City.EnglishName.IsNotNullOrEmpty() ? companyData.City.EnglishName : "";
                 manageModel.Email = companyData.Email;
                 manageModel.Mobile = companyData.Mobile;
+                manageModel.Cities = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(citiesData, "Id", "EnglishName");
+                manageModel.TopUpAmount = companyData.TopUpAmount;
 
 
 
@@ -115,7 +127,7 @@ namespace hijazi.Controllers
                         {
                             Id = VehicleId,
                             CompanyId = CompanyId,
-                            Company = companyData.EnglishName,
+                            Company = companyData.CompanyName,
                             MACAddress = vehicleData.MACAddress,
                             PlateNumber = vehicleData.PlateNumber,
                             VINNumber = vehicleData.VINNumber,
@@ -145,11 +157,13 @@ namespace hijazi.Controllers
 
                     if (companyData.IsNotNullOrEmpty() && companyData.Id == SaveModel.Id)
                     {
-                        companyData.ArabicName = SaveModel.ArabicName;
-                        companyData.EnglishName = SaveModel.EnglishName;
-                        companyData.Mobile = SaveModel.Mobile;
-                        companyData.Email = SaveModel.Email;
-
+                        //companyData.CompanyName = SaveModel.CompanyName;
+                        //companyData.CompanyRegistrationNumber = SaveModel.CompanyRegistrationNumber;
+                        //companyData.CountryId = SaveModel.CountryId;
+                        //companyData.CityId = SaveModel.CityId;
+                        //companyData.Mobile = SaveModel.Mobile;
+                        //companyData.Email = SaveModel.Email;
+                        companyData.TopUpAmount = SaveModel.TopUpAmount;
                         _appContext.Company.Update(companyData);
                     }
                 }
@@ -283,9 +297,17 @@ namespace hijazi.Controllers
         {
             return (await _appContext.Company
                     .Where(x => x.Id == Id)
+                        .Include(x => x.Country)
+                         .Include(x => x.City)
                         .Include(x => x.Vehicles)
                             .ThenInclude(x => x.VehicleUsers)
                 .ToListAsync()).FirstOrDefault();
+        }
+
+        private async Task<List<City>> GetCityByCountyId(int CountyId)
+        {
+            return (await _appContext.City
+                    .Where(x => x.CountryId == CountyId).ToListAsync());
         }
 
         private async Task<Vehicle> GetVehicle(int Id)
