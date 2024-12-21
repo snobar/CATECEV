@@ -194,7 +194,7 @@
                 if (countryId) {
                     // Make an AJAX request to get cities based on the selected country
                     $.ajax({
-                        url: '/City/GetCitiesByCountry', // The API endpoint to get cities by country
+                        url: '../City/GetCitiesByCountry', // The API endpoint to get cities by country
                         type: 'GET',
                         data: { countryId: countryId },
                         success: function(data) {
