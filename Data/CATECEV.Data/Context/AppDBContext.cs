@@ -1,7 +1,7 @@
-﻿using CATECEV.FE.Models.Entity;
+﻿using CATECEV.Models.Entity;
 using Microsoft.EntityFrameworkCore;
 
-namespace CATECEV.FE.Data
+namespace CATECEV.Data.Context
 {
     public class AppDBContext : DbContext
     {

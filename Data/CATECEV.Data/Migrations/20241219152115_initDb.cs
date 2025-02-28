@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace hijazi.Migrations
+namespace CATECEV.Data.Migrations
 {
     /// <inheritdoc />
     public partial class initDb : Migration

@@ -1,7 +1,7 @@
 using CATECEV.CORE.Extensions;
-using CATECEV.FE.Data;
+using CATECEV.Data.Context;
 using CATECEV.FE.Models;
-using CATECEV.FE.Models.Entity;
+using CATECEV.Models.Entity;
 using CATECEV.FE.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

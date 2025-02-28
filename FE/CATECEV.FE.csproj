@@ -28,6 +28,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core\CATECEV.CORE\CATECEV.CORE.csproj" />
+    <ProjectReference Include="..\Data\CATECEV.Data\CATECEV.Data.csproj" />
+    <ProjectReference Include="..\Models\CATECEV.Models\CATECEV.Models.csproj" />
   </ItemGroup>
 
 </Project>

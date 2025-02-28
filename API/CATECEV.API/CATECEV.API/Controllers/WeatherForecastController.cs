@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using CATECEV.API.Models.AMPECO;
 using CATECEV.CORE.Framework;
+using CATECEV.API.Helper.IService;
 namespace CATECEV.API.Controllers
 {
     [ApiController]
@@ -8,6 +9,7 @@ namespace CATECEV.API.Controllers
     public class WeatherForecastController : ControllerBase
     {
         private readonly IHttpClientService _httpClientService;
+        private readonly IUser _user;
         private static readonly string[] Summaries = new[]
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
@@ -15,10 +17,11 @@ namespace CATECEV.API.Controllers
 
         private readonly ILogger<WeatherForecastController> _logger;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger, IHttpClientService httpClientService)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IHttpClientService httpClientService, IUser user)
         {
             _logger = logger;
             _httpClientService = httpClientService;
+            _user = user;
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
@@ -36,7 +39,7 @@ namespace CATECEV.API.Controllers
         [HttpGet("GetUserListTest")]
         public async Task<IActionResult> GetUserListTest()
         {
-            var userData = await _httpClientService.GetAsync<Data<IEnumerable<Models.AMPECO.resource.users.User>>>("https://shabikuae.eu.charge.ampeco.tech/public-api/resources/users/v1.0", Utility.GetAppsettingsValue("AccessToken"));
+            var userData = await _user.GetUsers();
 
 
             return Ok(userData);

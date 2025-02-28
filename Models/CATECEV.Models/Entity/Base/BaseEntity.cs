@@ -1,4 +1,4 @@
-﻿namespace CATECEV.FE.Models.Entity.Base
+﻿namespace CATECEV.Models.Entity.Base
 {
     public class BaseEntity
     {

@@ -2,20 +2,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using CATECEV.FE.Data;
+using CATECEV.Data.Context;
 
 #nullable disable
 
-namespace hijazi.Migrations
+namespace CATECEV.Data.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20241220132605_addCountryandCityTables")]
-    partial class addCountryandCityTables
+    partial class AppDBContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -24,7 +21,7 @@ namespace hijazi.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("hijazi.Models.Entity.City", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.City", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -51,7 +48,7 @@ namespace hijazi.Migrations
                     b.ToTable("City");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.Company", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.Company", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -80,6 +77,9 @@ namespace hijazi.Migrations
                     b.Property<string>("Mobile")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("TopUpAmount")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CityId");
@@ -89,7 +89,7 @@ namespace hijazi.Migrations
                     b.ToTable("Company");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.Country", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.Country", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -111,7 +111,7 @@ namespace hijazi.Migrations
                     b.ToTable("Country");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.Vehicle", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.Vehicle", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -146,7 +146,7 @@ namespace hijazi.Migrations
                     b.ToTable("Vehicle");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.VehicleType", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.VehicleType", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -168,7 +168,7 @@ namespace hijazi.Migrations
                     b.ToTable("VehicleType");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.VehicleUser", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.VehicleUser", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -198,9 +198,9 @@ namespace hijazi.Migrations
                     b.ToTable("VehicleUser");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.City", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.City", b =>
                 {
-                    b.HasOne("hijazi.Models.Entity.Country", "Country")
+                    b.HasOne("CATECEV.Models.Entity.Country", "Country")
                         .WithMany("Cities")
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -209,14 +209,14 @@ namespace hijazi.Migrations
                     b.Navigation("Country");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.Company", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.Company", b =>
                 {
-                    b.HasOne("hijazi.Models.Entity.City", "City")
+                    b.HasOne("CATECEV.Models.Entity.City", "City")
                         .WithMany("Companies")
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("hijazi.Models.Entity.Country", "Country")
+                    b.HasOne("CATECEV.Models.Entity.Country", "Country")
                         .WithMany("Companies")
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -226,15 +226,15 @@ namespace hijazi.Migrations
                     b.Navigation("Country");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.Vehicle", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.Vehicle", b =>
                 {
-                    b.HasOne("hijazi.Models.Entity.Company", "Company")
+                    b.HasOne("CATECEV.Models.Entity.Company", "Company")
                         .WithMany("Vehicles")
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("hijazi.Models.Entity.VehicleType", "VehicleType")
+                    b.HasOne("CATECEV.Models.Entity.VehicleType", "VehicleType")
                         .WithMany("Vehicles")
                         .HasForeignKey("TypeId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -245,9 +245,9 @@ namespace hijazi.Migrations
                     b.Navigation("VehicleType");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.VehicleUser", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.VehicleUser", b =>
                 {
-                    b.HasOne("hijazi.Models.Entity.Vehicle", "Vehicle")
+                    b.HasOne("CATECEV.Models.Entity.Vehicle", "Vehicle")
                         .WithMany("VehicleUsers")
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -256,29 +256,29 @@ namespace hijazi.Migrations
                     b.Navigation("Vehicle");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.City", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.City", b =>
                 {
                     b.Navigation("Companies");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.Company", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.Company", b =>
                 {
                     b.Navigation("Vehicles");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.Country", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.Country", b =>
                 {
                     b.Navigation("Cities");
 
                     b.Navigation("Companies");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.Vehicle", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.Vehicle", b =>
                 {
                     b.Navigation("VehicleUsers");
                 });
 
-            modelBuilder.Entity("hijazi.Models.Entity.VehicleType", b =>
+            modelBuilder.Entity("CATECEV.Models.Entity.VehicleType", b =>
                 {
                     b.Navigation("Vehicles");
                 });

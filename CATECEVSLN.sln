@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CATECEV.CORE", "Core\CATECE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CATECEV.FE", "FE\CATECEV.FE.csproj", "{3511DC57-9E1F-4EDA-AB73-5A11A73B53DB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CATECEV.Models", "Models\CATECEV.Models\CATECEV.Models.csproj", "{59A211B4-3911-4535-9AC5-FCA140D826D2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CATECEV.Data", "Data\CATECEV.Data\CATECEV.Data.csproj", "{D350D4EA-2C3C-478D-A802-7E82B4E597A2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{3511DC57-9E1F-4EDA-AB73-5A11A73B53DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3511DC57-9E1F-4EDA-AB73-5A11A73B53DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3511DC57-9E1F-4EDA-AB73-5A11A73B53DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59A211B4-3911-4535-9AC5-FCA140D826D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59A211B4-3911-4535-9AC5-FCA140D826D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59A211B4-3911-4535-9AC5-FCA140D826D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59A211B4-3911-4535-9AC5-FCA140D826D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D350D4EA-2C3C-478D-A802-7E82B4E597A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D350D4EA-2C3C-478D-A802-7E82B4E597A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D350D4EA-2C3C-478D-A802-7E82B4E597A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D350D4EA-2C3C-478D-A802-7E82B4E597A2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

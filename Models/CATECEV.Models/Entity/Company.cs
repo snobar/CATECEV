@@ -1,6 +1,6 @@
-﻿using CATECEV.FE.Models.Entity.Base;
+﻿using CATECEV.Models.Entity.Base;
 
-namespace CATECEV.FE.Models.Entity
+namespace CATECEV.Models.Entity
 {
     public class Company : BaseEntity
     {
