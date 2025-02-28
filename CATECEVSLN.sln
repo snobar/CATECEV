@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.12.35514.174
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CATECEV.FE", "CATECEV.FE.csproj", "{845CD0B7-FF00-4EFE-AF84-0C4373714710}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CATECEV.API", "API\CATECEV.API\CATECEV.API\CATECEV.API.csproj", "{BAA026D9-7078-4119-89FB-413F43045445}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CATECEV.CORE", "Core\CATECEV.CORE\CATECEV.CORE.csproj", "{E3844A48-A667-43BF-975B-1319EFE5285C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CATECEV.FE", "FE\CATECEV.FE.csproj", "{3511DC57-9E1F-4EDA-AB73-5A11A73B53DB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{845CD0B7-FF00-4EFE-AF84-0C4373714710}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{845CD0B7-FF00-4EFE-AF84-0C4373714710}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{845CD0B7-FF00-4EFE-AF84-0C4373714710}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{845CD0B7-FF00-4EFE-AF84-0C4373714710}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BAA026D9-7078-4119-89FB-413F43045445}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BAA026D9-7078-4119-89FB-413F43045445}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BAA026D9-7078-4119-89FB-413F43045445}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,6 +23,10 @@ Global
 		{E3844A48-A667-43BF-975B-1319EFE5285C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E3844A48-A667-43BF-975B-1319EFE5285C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E3844A48-A667-43BF-975B-1319EFE5285C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3511DC57-9E1F-4EDA-AB73-5A11A73B53DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3511DC57-9E1F-4EDA-AB73-5A11A73B53DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3511DC57-9E1F-4EDA-AB73-5A11A73B53DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3511DC57-9E1F-4EDA-AB73-5A11A73B53DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

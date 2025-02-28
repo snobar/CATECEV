@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using CATECEV.API.Models.AMPECO;
+using CATECEV.CORE.Framework;
 namespace CATECEV.API.Controllers
 {
     [ApiController]
@@ -35,7 +36,7 @@ namespace CATECEV.API.Controllers
         [HttpGet("GetUserListTest")]
         public async Task<IActionResult> GetUserListTest()
         {
-            var userData = await _httpClientService.GetAsync<Data<IEnumerable<Models.AMPECO.resource.users.User>>>("https://shabikuae.eu.charge.ampeco.tech/public-api/resources/users/v1.0", "38ed9669-94ca-4c80-9cc9-8ac4fd549d5f");
+            var userData = await _httpClientService.GetAsync<Data<IEnumerable<Models.AMPECO.resource.users.User>>>("https://shabikuae.eu.charge.ampeco.tech/public-api/resources/users/v1.0", Utility.GetAppsettingsValue("AccessToken"));
 
 
             return Ok(userData);
