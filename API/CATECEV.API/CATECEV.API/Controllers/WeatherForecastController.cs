@@ -8,8 +8,6 @@ namespace CATECEV.API.Controllers
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
-        private readonly IHttpClientService _httpClientService;
-        private readonly IUser _user;
         private static readonly string[] Summaries = new[]
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
@@ -17,11 +15,9 @@ namespace CATECEV.API.Controllers
 
         private readonly ILogger<WeatherForecastController> _logger;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger, IHttpClientService httpClientService, IUser user)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger)
         {
-            _logger = logger;
-            _httpClientService = httpClientService;
-            _user = user;
+            _logger = logger;            
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
@@ -34,15 +30,6 @@ namespace CATECEV.API.Controllers
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
-        }
-
-        [HttpGet("GetUserListTest")]
-        public async Task<IActionResult> GetUserListTest()
-        {
-            var userData = await _user.GetUsers();
-
-
-            return Ok(userData);
         }
     }
 }

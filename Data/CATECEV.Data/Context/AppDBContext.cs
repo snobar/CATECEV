@@ -1,4 +1,5 @@
 ﻿using CATECEV.Models.Entity;
+using CATECEV.Models.Entity.AMPECO.Resources.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace CATECEV.Data.Context
@@ -13,6 +14,8 @@ namespace CATECEV.Data.Context
         public DbSet<VehicleType> VehicleType { get; set; }
         public DbSet<Country> Country { get; set; }
         public DbSet<City> City { get; set; }
+        public DbSet<User> User { get; set; }
+        public DbSet<UserOptions> UserOptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -90,6 +93,28 @@ namespace CATECEV.Data.Context
             modelBuilder.Entity<City>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
+            });
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Options)
+                      .WithOne(u => u.User)
+                      .HasForeignKey<User>(e => e.OptionsId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+            });
+
+            modelBuilder.Entity<UserOptions>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.User)
+                      .WithOne(u => u.Options)
+                      .HasForeignKey<UserOptions>(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
             });
         }

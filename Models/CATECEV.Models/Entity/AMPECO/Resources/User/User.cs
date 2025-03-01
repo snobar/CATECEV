@@ -1,8 +1,10 @@
-﻿namespace CATECEV.API.Models.AMPECO.resource.users
+﻿using CATECEV.Models.Entity.Base;
+
+namespace CATECEV.Models.Entity.AMPECO.Resources.User
 {
-    public class User
+    public class User : BaseEntity
     {
-        public string Id { get; set; }
+        public string AMPECOId { get; set; }
         public string Email { get; set; }
         public bool RequirePasswordReset { get; set; }
         public DateTime EmailVerified { get; set; }
@@ -27,7 +29,9 @@
         public DateTime LastUpdatedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public string CreatedBy { get; set; }
-        public UserOptions Options { get; set; }
         public List<int> TermsAndPoliciesIdsWithConsent { get; set; }
+        public int OptionsId { get; set; }
+
+        public UserOptions Options { get; set; }
     }
 }
