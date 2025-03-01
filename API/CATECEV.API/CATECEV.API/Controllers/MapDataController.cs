@@ -1,4 +1,6 @@
-﻿using CATECEV.API.Helper.IService;
+﻿using AutoMapper;
+using CATECEV.API.Helper.IService;
+using CATECEV.CORE.Extensions;
 using CATECEV.Data.Context;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,20 +12,27 @@ namespace CATECEV.API.Controllers
     {
         private readonly IUser _user;
         private readonly AppDBContext _appContext;
-
-        public MapDataController(IUser user, AppDBContext appContext)
+        private readonly IMapper _mapper;
+        public MapDataController(IUser user, AppDBContext appContext, IMapper mapper)
         {
             _user = user;
             _appContext = appContext;
+            _mapper = mapper;
         }
 
         [HttpGet("GetUserListTest")]
         public async Task<IActionResult> GetUserListTest()
         {
-            var userData = await _user.GetUsers();
+            var pageNumber = 1;
+            var userData1 = await _user.GetUsers(pageNumber);
+            var userData2 = await _user.GetUsers(2);
 
+            if (userData1.IsNotNullOrEmpty())
+            {
+                var mappedUserData = _mapper.Map<IEnumerable<Models.AMPECO.resource.users.User>, IEnumerable<CATECEV.Models.Entity.AMPECO.Resources.User.User>>(userData1);
+            }
 
-            return Ok(userData);
+            return Ok(userData1);
         }
     }
 }

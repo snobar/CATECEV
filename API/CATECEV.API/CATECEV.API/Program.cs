@@ -1,6 +1,8 @@
-using CATECEV.API.Helper.Service;
 using CATECEV.API.Helper.IService;
+using CATECEV.API.Helper.Service;
+using CATECEV.API.Mapper;
 using CATECEV.Data.Configure;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,8 @@ builder.Services.ConfigureContext();
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddHttpClient<IHttpClientService, HttpClientService>();
 builder.Services.AddScoped<IUser, User>();

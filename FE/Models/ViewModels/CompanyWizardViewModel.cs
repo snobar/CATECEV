@@ -1,4 +1,4 @@
-﻿using CATECEV.FE.Models.Entity;
+﻿using CATECEV.Models.Entity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 

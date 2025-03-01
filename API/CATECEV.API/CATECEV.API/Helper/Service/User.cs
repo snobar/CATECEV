@@ -1,5 +1,4 @@
 ﻿using CATECEV.API.Helper.IService;
-using CATECEV.API.Models.AMPECO;
 using CATECEV.CORE.Extensions;
 using CATECEV.CORE.Framework;
 
@@ -19,13 +18,14 @@ namespace CATECEV.API.Helper.Service
             _httpClientService = httpClientService;
         }
 
-        public async Task<IEnumerable<Models.AMPECO.resource.users.User>> GetUsers()
+        public async Task<IEnumerable<Models.AMPECO.resource.users.User>> GetUsers(int pageNumber, int pageSize = 100)
         {
 
-            var userData = await _httpClientService.GetAsync<Data<IEnumerable<Models.AMPECO.resource.users.User>>>(_userApi, _token);
-            if (userData.IsNotNullOrEmpty() && userData.data.IsNotNullOrEmpty())
+            var apiUrl = $"{_userApi}?page={pageNumber}&per_page={pageSize}";
+            var userData = await _httpClientService.GetAsync<IEnumerable<Models.AMPECO.resource.users.User>>(apiUrl, _token);
+            if (userData.IsNotNullOrEmpty() && userData.Data.IsNotNullOrEmpty() && userData.IsSuccess && userData.StatusCode == System.Net.HttpStatusCode.OK)
             {
-                return userData.data;
+                return userData.Data;
             }
 
             return new List<Models.AMPECO.resource.users.User>();

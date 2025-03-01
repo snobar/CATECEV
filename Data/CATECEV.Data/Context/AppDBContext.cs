@@ -1,5 +1,6 @@
 ﻿using CATECEV.Models.Entity;
 using CATECEV.Models.Entity.AMPECO.Resources.User;
+using CATECEV.Models.Entity.Shared;
 using Microsoft.EntityFrameworkCore;
 
 namespace CATECEV.Data.Context
@@ -16,6 +17,8 @@ namespace CATECEV.Data.Context
         public DbSet<City> City { get; set; }
         public DbSet<User> User { get; set; }
         public DbSet<UserOptions> UserOptions { get; set; }
+        public DbSet<Lookups> Lookups { get; set; }
+        public DbSet<LookupCategory> LookupCategory { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -98,6 +101,7 @@ namespace CATECEV.Data.Context
 
             modelBuilder.Entity<User>(entity =>
             {
+                entity.ToTable("User", "Resources");
                 entity.HasKey(e => e.Id);
 
                 entity.HasOne(e => e.Options)
@@ -109,6 +113,7 @@ namespace CATECEV.Data.Context
 
             modelBuilder.Entity<UserOptions>(entity =>
             {
+                entity.ToTable("UserOptions", "Resources");
                 entity.HasKey(e => e.Id);
 
                 entity.HasOne(e => e.User)
@@ -116,6 +121,29 @@ namespace CATECEV.Data.Context
                       .HasForeignKey<UserOptions>(e => e.UserId)
                       .OnDelete(DeleteBehavior.Restrict);
 
+            });
+
+            modelBuilder.Entity<Lookups>(entity =>
+            {
+                entity.ToTable("Lookups", "Shared");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.LookupCategory)
+                      .WithMany(u => u.Lookups)
+                      .HasForeignKey(e => e.LookupCategoryId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasData(new Lookups
+                {
+
+                });
+
+            });
+
+            modelBuilder.Entity<LookupCategory>(entity =>
+            {
+                entity.ToTable("LookupCategory", "Shared");
+                entity.HasKey(e => e.Id);
             });
         }
     }

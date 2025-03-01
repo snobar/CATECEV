@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -20,16 +21,38 @@ public class HttpClientService : IHttpClientService
         };
     }
 
-    public async Task<T> GetAsync<T>(string uri, string token = null)
+    public async Task<ResponseModel<T>> GetAsync<T>(string uri, string token = null)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        AddAuthorizationHeader(request, token);
+        var response = new HttpResponseMessage();
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            AddAuthorizationHeader(request, token);
 
-        var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-        var content = await response.Content.ReadAsStringAsync();
+            response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
 
-        return JsonSerializer.Deserialize<T>(content, _options);
+            var data = JsonSerializer.Deserialize<Data<T>>(content, _options);
+
+            return new ResponseModel<T> 
+            { 
+                Data = data.data,
+                IsSuccess = true,
+                StatusCode = response.StatusCode,
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ResponseModel<T>
+            {
+                IsSuccess = false,
+                Message = $"HttpClientService Exception Message: {ex.Message} \n HttpClientService Exception InnerException: {ex.InnerException}",
+                ShowMessage = false,
+                StatusCode = response.StatusCode
+            };
+        }
+
     }
 
     public async Task<T> PostAsync<T>(string uri, object data, string token = null)
@@ -103,9 +126,52 @@ public class HttpClientService : IHttpClientService
 
 public interface IHttpClientService
 {
-    Task<T> GetAsync<T>(string uri, string token = null);
+    Task<ResponseModel<T>> GetAsync<T>(string uri, string token = null);
     Task<T> PostAsync<T>(string uri, object data, string token = null);
     Task<T> PutAsync<T>(string uri, object data, string token = null);
     Task DeleteAsync(string uri, string token = null);
     Task<T> PatchAsync<T>(string uri, object data, string token = null);
+}
+
+public class ResponseModel<T>
+{
+    public T Data { get; set; }
+    public bool IsSuccess { get; set; }
+    public HttpStatusCode StatusCode { get; set; }
+    public string Message { get; set; }
+    public bool ShowMessage { get; set; }
+}
+
+public class Data<T>
+{
+    public T data { get; set; }
+    public Links Links { get; set; }
+    public Meta Meta { get; set; }
+}
+
+public class Links
+{
+    public string First { get; set; }
+    public string Last { get; set; }
+    public string Prev { get; set; }
+    public string Next { get; set; }
+}
+
+public class Meta
+{
+    public int CurrentPage { get; set; }
+    public int? From { get; set; }
+    public int LastPage { get; set; }
+    public List<PageLink> Links { get; set; }
+    public string Path { get; set; }
+    public int PerPage { get; set; }
+    public int? To { get; set; }
+    public int Total { get; set; }
+}
+
+public class PageLink
+{
+    public string Url { get; set; }
+    public string Label { get; set; }
+    public bool Active { get; set; }
 }
