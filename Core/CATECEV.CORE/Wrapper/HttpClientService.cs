@@ -140,6 +140,9 @@ public class ResponseModel<T>
     public HttpStatusCode StatusCode { get; set; }
     public string Message { get; set; }
     public bool ShowMessage { get; set; }
+    public int CurrentPage { get; set; }
+    public int TotalRecords { get; set; }
+    public int TotalPages { get; set; }
 }
 
 public class Data<T>
@@ -159,9 +162,9 @@ public class Links
 
 public class Meta
 {
-    public int CurrentPage { get; set; }
+    public int current_page { get; set; }
     public int? From { get; set; }
-    public int LastPage { get; set; }
+    public int last_page { get; set; }
     public List<PageLink> Links { get; set; }
     public string Path { get; set; }
     public int PerPage { get; set; }
