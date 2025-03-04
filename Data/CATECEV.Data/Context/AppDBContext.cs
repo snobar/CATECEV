@@ -1,4 +1,6 @@
 ﻿using CATECEV.Models.Entity;
+using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
+using CATECEV.Models.Entity.AMPECO.Resources.Session;
 using CATECEV.Models.Entity.AMPECO.Resources.User;
 using CATECEV.Models.Entity.Shared;
 using Microsoft.EntityFrameworkCore;
@@ -19,9 +21,13 @@ namespace CATECEV.Data.Context
         public DbSet<UserOptions> UserOptions { get; set; }
         public DbSet<Lookups> Lookups { get; set; }
         public DbSet<LookupCategory> LookupCategory { get; set; }
+        public DbSet<ChargingSessionEntity> ChargingSession { get; set; }
+        public DbSet<ChargePointEntity> ChargePoint { get; set; }
+        public DbSet<EvseEntity> Evse { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            #region Front End
             modelBuilder.Entity<Company>(entity =>
             {
                 entity.HasKey(e => e.Id);
@@ -34,9 +40,9 @@ namespace CATECEV.Data.Context
                 entity.HasOne(e => e.Country)
                       .WithMany(c => c.Companies)
                       .HasForeignKey(e => e.CountryId)
-                      .OnDelete(DeleteBehavior.SetNull); 
+                      .OnDelete(DeleteBehavior.SetNull);
 
-        
+
                 entity.HasOne(e => e.City)
                       .WithMany(c => c.Companies)
                       .HasForeignKey(e => e.CityId)
@@ -81,12 +87,11 @@ namespace CATECEV.Data.Context
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
-
             modelBuilder.Entity<Country>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-         
+
                 entity.HasMany(e => e.Cities)
                       .WithOne(c => c.Country)
                       .HasForeignKey(c => c.CountryId)
@@ -98,7 +103,45 @@ namespace CATECEV.Data.Context
                 entity.HasKey(e => e.Id);
 
             });
+            #endregion
 
+            #region Shared
+            modelBuilder.Entity<Lookups>(entity =>
+            {
+                entity.ToTable("Lookups", "Shared");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.LookupCategory)
+                      .WithMany(u => u.Lookups)
+                      .HasForeignKey(e => e.LookupCategoryId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasData(new Lookups
+                {
+                    Id = (int)Models.Enums.PaymentStatus.Paid,
+                    LookupCategoryId = (int)Models.Enums.LookupCategory.PaymentStatus,
+                    EnglishDescription = "Paid",
+                    ArabicDescription = "مدفوع",
+                    IsActive = true,
+                    OrderId = 1
+                });
+            });
+
+            modelBuilder.Entity<LookupCategory>(entity =>
+            {
+                entity.ToTable("LookupCategory", "Shared");
+                entity.HasKey(e => e.Id);
+
+                entity.HasData(new LookupCategory
+                {
+                    Id = (int)Models.Enums.LookupCategory.PaymentStatus,
+                    Description = "Payment Status",
+                    IsActive = true,
+                });
+            });
+            #endregion
+
+            #region User
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("User", "Resources");
@@ -122,29 +165,72 @@ namespace CATECEV.Data.Context
                       .OnDelete(DeleteBehavior.Restrict);
 
             });
+            #endregion
 
-            modelBuilder.Entity<Lookups>(entity =>
+            #region ChargingSession
+            modelBuilder.Entity<ChargingSessionEntity>(entity =>
             {
-                entity.ToTable("Lookups", "Shared");
+                entity.ToTable("ChargingSession", "Resources");
                 entity.HasKey(e => e.Id);
 
-                entity.HasOne(e => e.LookupCategory)
-                      .WithMany(u => u.Lookups)
-                      .HasForeignKey(e => e.LookupCategoryId)
+                entity.HasOne(e => e.Tax)
+                      .WithOne(u => u.ChargingSession)
+                      .HasForeignKey<ChargingSessionEntity>(e => e.TaxId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasData(new Lookups
-                {
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.ChargingSessions)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
-                });
+                entity.HasOne(e => e.Evse)
+                      .WithMany(u => u.ChargingSessions)
+                      .HasForeignKey(e => e.EvseId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasOne(e => e.Connector)
+                      .WithMany(u => u.ChargingSessions)
+                      .HasForeignKey(e => e.ConnectorId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
+            #endregion
 
-            modelBuilder.Entity<LookupCategory>(entity =>
+            #region ChargePoint
+            modelBuilder.Entity<ChargePointEntity>(entity =>
             {
-                entity.ToTable("LookupCategory", "Shared");
+                entity.ToTable("ChargePoint", "Resources");
                 entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.OwnerUser)
+                      .WithMany(u => u.ChargePoint)
+                      .HasForeignKey(e => e.OwnerUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
+
+            modelBuilder.Entity<ConnectorEntity>(entity =>
+            {
+                entity.ToTable("Connector", "Resources");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Evse)
+                      .WithMany(u => u.Connectors)
+                      .HasForeignKey(e => e.EvseId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+            });
+
+            modelBuilder.Entity<EvseEntity>(entity =>
+            {
+                entity.ToTable("Evse", "Resources");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.ChargePoint)
+                      .WithMany(u => u.Evses)
+                      .HasForeignKey(e => e.ChargePointId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+            });
+            #endregion
         }
     }
 }

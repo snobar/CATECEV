@@ -4,7 +4,8 @@ namespace CATECEV.Models.Entity.Shared
 {
     public class Lookups : BaseEntity
     {
-        public string Description { get; set; }
+        public string ArabicDescription { get; set; }
+        public string EnglishDescription { get; set; }
         public int LookupCategoryId { get; set; }
         public int OrderId { get; set; }
 

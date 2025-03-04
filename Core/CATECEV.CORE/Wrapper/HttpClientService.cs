@@ -40,6 +40,9 @@ public class HttpClientService : IHttpClientService
                 Data = data.data,
                 IsSuccess = true,
                 StatusCode = response.StatusCode,
+                CurrentPage = data.Meta.current_page,
+                TotalRecords = data.Meta.Total,
+                TotalPages = data.Meta.last_page,
             };
         }
         catch (Exception ex)

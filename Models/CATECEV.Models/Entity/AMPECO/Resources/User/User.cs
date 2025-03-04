@@ -1,4 +1,6 @@
-﻿using CATECEV.Models.Entity.Base;
+﻿using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
+using CATECEV.Models.Entity.AMPECO.Resources.Session;
+using CATECEV.Models.Entity.Base;
 
 namespace CATECEV.Models.Entity.AMPECO.Resources.User
 {
@@ -7,7 +9,7 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.User
         public string AMPECOId { get; set; }
         public string Email { get; set; }
         public bool RequirePasswordReset { get; set; }
-        public DateTime EmailVerified { get; set; }
+        public DateTime? EmailVerified { get; set; }
         public string FirstName { get; set; }
         public string MiddleName { get; set; }
         public string LastName { get; set; }
@@ -26,12 +28,15 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.User
         public List<int> UserGroupIds { get; set; }
         public string SubscriptionId { get; set; }
         public string ExternalId { get; set; }
-        public DateTime LastUpdatedAt { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTime? LastUpdatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
         public string CreatedBy { get; set; }
         public List<int> TermsAndPoliciesIdsWithConsent { get; set; }
-        public int OptionsId { get; set; }
 
+        public int OptionsId { get; set; }
         public UserOptions Options { get; set; }
+
+        public ICollection<ChargingSessionEntity> ChargingSessions { get; set; }
+        public ICollection<ChargePointEntity> ChargePoint { get; set; }
     }
 }

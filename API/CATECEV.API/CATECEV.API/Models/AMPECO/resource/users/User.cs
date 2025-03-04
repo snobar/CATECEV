@@ -5,7 +5,7 @@
         public string Id { get; set; }
         public string Email { get; set; }
         public bool RequirePasswordReset { get; set; }
-        public DateTime EmailVerified { get; set; }
+        public DateTime? EmailVerified { get; set; }
         public string FirstName { get; set; }
         public string MiddleName { get; set; }
         public string LastName { get; set; }
@@ -24,8 +24,8 @@
         public List<int> UserGroupIds { get; set; }
         public string SubscriptionId { get; set; }
         public string ExternalId { get; set; }
-        public DateTime LastUpdatedAt { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTime? LastUpdatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
         public string CreatedBy { get; set; }
         public UserOptions Options { get; set; }
         public List<int> TermsAndPoliciesIdsWithConsent { get; set; }

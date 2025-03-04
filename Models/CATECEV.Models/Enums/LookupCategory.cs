@@ -2,6 +2,6 @@
 {
     public enum LookupCategory
     {
-
+        PaymentStatus = 1
     }
 }
