@@ -5,14 +5,14 @@ using CATECEV.CORE.Framework;
 
 namespace CATECEV.API.Helper.Service
 {
-    public class User : IUser
+    public class AMPECOUser : IAMPECOUser
     {
         private string _userApi;
         private string _token;
 
         private readonly IHttpClientService _httpClientService;
 
-        public User(IHttpClientService httpClientService)
+        public AMPECOUser(IHttpClientService httpClientService)
         {
             _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "User")}";
             _token = Utility.GetAppsettingsValue("AccessToken");

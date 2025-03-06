@@ -1,6 +1,7 @@
 ﻿using CATECEV.Models.Entity;
 using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
 using CATECEV.Models.Entity.AMPECO.Resources.Session;
+using CATECEV.Models.Entity.AMPECO.Resources.Tax;
 using CATECEV.Models.Entity.AMPECO.Resources.User;
 using CATECEV.Models.Entity.Shared;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,8 @@ namespace CATECEV.Data.Context
         public DbSet<ChargingSessionEntity> ChargingSession { get; set; }
         public DbSet<ChargePointEntity> ChargePoint { get; set; }
         public DbSet<EvseEntity> Evse { get; set; }
+        public DbSet<TaxEntity> Tax { get; set; }
+        public DbSet<TaxDisplayNameEntity> TaxDisplayName { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -174,8 +177,8 @@ namespace CATECEV.Data.Context
                 entity.HasKey(e => e.Id);
 
                 entity.HasOne(e => e.Tax)
-                      .WithOne(u => u.ChargingSession)
-                      .HasForeignKey<ChargingSessionEntity>(e => e.TaxId)
+                      .WithMany(u => u.ChargingSession)
+                      .HasForeignKey(e => e.TaxId)
                       .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.User)
@@ -227,6 +230,26 @@ namespace CATECEV.Data.Context
                 entity.HasOne(e => e.ChargePoint)
                       .WithMany(u => u.Evses)
                       .HasForeignKey(e => e.ChargePointId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+            });
+            #endregion
+
+            #region Tax
+            modelBuilder.Entity<TaxEntity>(entity =>
+            {
+                entity.ToTable("Tax", "Resources");
+                entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<TaxDisplayNameEntity>(entity =>
+            {
+                entity.ToTable("TaxDisplayName", "Resources");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Tax)
+                      .WithMany(u => u.DisplayName)
+                      .HasForeignKey(e => e.TaxId)
                       .OnDelete(DeleteBehavior.Restrict);
 
             });

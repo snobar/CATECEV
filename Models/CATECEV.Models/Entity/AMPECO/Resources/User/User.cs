@@ -6,7 +6,7 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.User
 {
     public class User : BaseEntity
     {
-        public string AMPECOId { get; set; }
+        public int AMPECOId { get; set; }
         public string Email { get; set; }
         public bool RequirePasswordReset { get; set; }
         public DateTime? EmailVerified { get; set; }

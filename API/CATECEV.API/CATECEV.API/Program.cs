@@ -1,3 +1,5 @@
+using CATECEV.API.EntityHelper.IService;
+using CATECEV.API.EntityHelper.Service;
 using CATECEV.API.Helper.IService;
 using CATECEV.API.Helper.Service;
 using CATECEV.API.Mapper;
@@ -15,6 +17,10 @@ builder.Services.AddControllers();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddHttpClient<IHttpClientService, HttpClientService>();
+builder.Services.AddScoped<IAMPECOUser, AMPECOUser>();
+builder.Services.AddScoped<IAMPECOChargePoints, AMPECOChargePoints>();
+builder.Services.AddScoped<IAMPECOSessions, AMPECOSessions>();
+builder.Services.AddScoped<IAMPECOTaxes, AMPECOTaxes>();
 builder.Services.AddScoped<IUser, User>();
 
 

@@ -12,7 +12,6 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.Tax
         public DateTime LastUpdatedAt { get; set; }
         public ICollection<TaxDisplayNameEntity> DisplayName { get; set; }
 
-        public int ChargingSessionId { get; set; }
-        public ChargingSessionEntity ChargingSession { get; set; }
+        public ICollection<ChargingSessionEntity> ChargingSession { get; set; }
     }
 }
