@@ -24,6 +24,7 @@ namespace CATECEV.Data.Context
         public DbSet<LookupCategory> LookupCategory { get; set; }
         public DbSet<ChargingSessionEntity> ChargingSession { get; set; }
         public DbSet<ChargePointEntity> ChargePoint { get; set; }
+        public DbSet<ConnectorEntity> Connector { get; set; }
         public DbSet<EvseEntity> Evse { get; set; }
         public DbSet<TaxEntity> Tax { get; set; }
         public DbSet<TaxDisplayNameEntity> TaxDisplayName { get; set; }

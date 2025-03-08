@@ -5,6 +5,6 @@ namespace CATECEV.API.Helper.IService
 {
     public interface IAMPECOSessions
     {
-        Task<AMPECOResponseModel<IEnumerable<ChargingSession>>> GetChargePoints(int pageNumber, int pageSize = 100);
+        Task<AMPECOResponseModel<IEnumerable<ChargingSession>>> GetChargingSession(int pageNumber, int pageSize = 100);
     }
 }

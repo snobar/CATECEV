@@ -19,7 +19,7 @@ namespace CATECEV.API.Helper.Service
             _httpClientService = httpClientService;
         }
 
-        public async Task<AMPECOResponseModel<IEnumerable<Models.AMPECO.resource.Session.ChargingSession>>> GetChargePoints(int pageNumber, int pageSize = 100)
+        public async Task<AMPECOResponseModel<IEnumerable<Models.AMPECO.resource.Session.ChargingSession>>> GetChargingSession(int pageNumber, int pageSize = 100)
         {
 
             var apiUrl = $"{_userApi}?page={pageNumber}&per_page={pageSize}";

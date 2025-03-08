@@ -17,29 +17,35 @@ namespace CATECEV.API.Mapper
             #endregion
 
             #region Charge Point
-            CreateMap<Models.AMPECO.resource.ChargePoint.ChargePoint, CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ChargePointEntity>()
-                .ForMember(destination => destination.AMPECOId, opt => opt.MapFrom(src => src.Id))
-                .ForMember(destination => destination.SubscriptionPlanIds, opt => opt.MapFrom(src => src.Subscription.SubscriptionPlanIds))
-                .ForMember(destination => destination.SubscriptionRequired, opt => opt.MapFrom(src => src.Subscription.SubscriptionRequired))
-                .ForMember(destination => destination.Id, opt => opt.Ignore())
-                .ReverseMap()
-                .ForMember(destination => destination.Id, opt => opt.MapFrom(src => src.AMPECOId))
-                .ForMember(destination => destination.Subscription.SubscriptionRequired, opt => opt.MapFrom(src => src.SubscriptionRequired))
-                .ForMember(destination => destination.Subscription.SubscriptionPlanIds, opt => opt.MapFrom(src => src.SubscriptionPlanIds));
+            CreateMap<Models.AMPECO.resource.ChargePoint.ChargePoint,
+            CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ChargePointEntity>()
+                .ForMember(dest => dest.AMPECOId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.SubscriptionPlanIds, opt => opt.MapFrom(src => src.Subscription.SubscriptionPlanIds))
+                .ForMember(dest => dest.SubscriptionRequired, opt => opt.MapFrom(src => src.Subscription.SubscriptionRequired))
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
 
-            CreateMap<Models.AMPECO.resource.ChargePoint.Evse, CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity>()
-                .ForMember(destination => destination.AMPECOId, opt => opt.MapFrom(src => src.Id))
-                .ForMember(destination => destination.RoamingPhysicalReference, opt => opt.MapFrom(src => src.Roaming.PhysicalReference))
-                .ForMember(destination => destination.Capabilities, opt => opt.MapFrom(src => src.Roaming.Capabilities))
-                .ForMember(destination => destination.TariffIds, opt => opt.MapFrom(src => src.Roaming.TariffIds))
-                .ForMember(destination => destination.RoamingStatus, opt => opt.MapFrom(src => src.Roaming.Status))
-                .ForMember(destination => destination.Id, opt => opt.Ignore())
-                .ReverseMap()
-                .ForMember(destination => destination.Id, opt => opt.MapFrom(src => src.AMPECOId))
-                .ForMember(destination => destination.Roaming.PhysicalReference, opt => opt.MapFrom(src => src.RoamingPhysicalReference))
-                .ForMember(destination => destination.Roaming.Capabilities, opt => opt.MapFrom(src => src.Capabilities))
-                .ForMember(destination => destination.Roaming.TariffIds, opt => opt.MapFrom(src => src.TariffIds))
-                .ForMember(destination => destination.Roaming.Status, opt => opt.MapFrom(src => src.RoamingStatus));
+            CreateMap<CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ChargePointEntity,
+            Models.AMPECO.resource.ChargePoint.ChargePoint>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.AMPECOId))
+                .ForPath(dest => dest.Subscription.SubscriptionRequired, opt => opt.MapFrom(src => src.SubscriptionRequired))
+                .ForPath(dest => dest.Subscription.SubscriptionPlanIds, opt => opt.MapFrom(src => src.SubscriptionPlanIds));
+
+            CreateMap<Models.AMPECO.resource.ChargePoint.Evse,
+            CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity>()
+                .ForMember(dest => dest.AMPECOId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.RoamingPhysicalReference, opt => opt.MapFrom(src => src.Roaming.PhysicalReference))
+                .ForMember(dest => dest.Capabilities, opt => opt.MapFrom(src => src.Roaming.Capabilities))
+                .ForMember(dest => dest.TariffIds, opt => opt.MapFrom(src => src.Roaming.TariffIds))
+                .ForMember(dest => dest.RoamingStatus, opt => opt.MapFrom(src => src.Roaming.Status))
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+            CreateMap<CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity,
+            Models.AMPECO.resource.ChargePoint.Evse>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.AMPECOId))
+                .ForPath(dest => dest.Roaming.PhysicalReference, opt => opt.MapFrom(src => src.RoamingPhysicalReference))
+                .ForPath(dest => dest.Roaming.Capabilities, opt => opt.MapFrom(src => src.Capabilities))
+                .ForPath(dest => dest.Roaming.TariffIds, opt => opt.MapFrom(src => src.TariffIds))
+                .ForPath(dest => dest.Roaming.Status, opt => opt.MapFrom(src => src.RoamingStatus));
 
             CreateMap<Models.AMPECO.resource.ChargePoint.Connector, CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ConnectorEntity>()
                 .ForMember(destination => destination.AMPECOId, opt => opt.MapFrom(src => src.Id))
@@ -49,23 +55,26 @@ namespace CATECEV.API.Mapper
             #endregion
 
             #region Charge session
-            CreateMap<Models.AMPECO.resource.Session.ChargingSession, CATECEV.Models.Entity.AMPECO.Resources.Session.ChargingSessionEntity>()
-                .ForMember(destination => destination.AMPECOId, opt => opt.MapFrom(src => src.Id))
-                .ForMember(destination => destination.TotalAmountWithTax, opt => opt.MapFrom(src => src.TotalAmount.WithTax))
-                .ForMember(destination => destination.TotalAmountWithoutTax, opt => opt.MapFrom(src => src.TotalAmount.WithoutTax))
-                .ForMember(destination => destination.TaxId, opt => opt.MapFrom(src => src.Tax.TaxId))
-                .ForMember(destination => destination.TaxPercentage, opt => opt.MapFrom(src => src.Tax.TaxPercentage))
-                .ForMember(destination => destination.TotalEnergyConsumption, opt => opt.MapFrom(src => src.EnergyConsumption.Total))
-                .ForMember(destination => destination.EnergyConsumptionGrid, opt => opt.MapFrom(src => src.EnergyConsumption.Grid))
-                .ForMember(destination => destination.Id, opt => opt.Ignore())
-                .ReverseMap()
-                .ForMember(destination => destination.Id, opt => opt.MapFrom(src => src.AMPECOId))
-                .ForMember(destination => destination.TotalAmount.WithTax, opt => opt.MapFrom(src => src.TotalAmountWithTax))
-                .ForMember(destination => destination.TotalAmount.WithoutTax, opt => opt.MapFrom(src => src.TotalAmountWithoutTax))
-                .ForMember(destination => destination.Tax.TaxId, opt => opt.MapFrom(src => src.TaxId))
-                .ForMember(destination => destination.Tax.TaxPercentage, opt => opt.MapFrom(src => src.TaxPercentage))
-                .ForMember(destination => destination.EnergyConsumption.Total, opt => opt.MapFrom(src => src.TotalEnergyConsumption))
-                .ForMember(destination => destination.EnergyConsumption.Grid, opt => opt.MapFrom(src => src.EnergyConsumptionGrid));
+            CreateMap<Models.AMPECO.resource.Session.ChargingSession,
+            CATECEV.Models.Entity.AMPECO.Resources.Session.ChargingSessionEntity>()
+                .ForMember(dest => dest.AMPECOId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.TotalAmountWithTax, opt => opt.MapFrom(src => src.TotalAmount.WithTax))
+                .ForMember(dest => dest.TotalAmountWithoutTax, opt => opt.MapFrom(src => src.TotalAmount.WithoutTax))
+                .ForMember(dest => dest.TaxId, opt => opt.MapFrom(src => src.Tax.TaxId))
+                .ForMember(dest => dest.TaxPercentage, opt => opt.MapFrom(src => src.Tax.TaxPercentage))
+                .ForMember(dest => dest.TotalEnergyConsumption, opt => opt.MapFrom(src => src.EnergyConsumption.Total))
+                .ForMember(dest => dest.EnergyConsumptionGrid, opt => opt.MapFrom(src => src.EnergyConsumption.Grid))
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+            CreateMap<CATECEV.Models.Entity.AMPECO.Resources.Session.ChargingSessionEntity,
+            Models.AMPECO.resource.Session.ChargingSession>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.AMPECOId))
+                .ForPath(dest => dest.TotalAmount.WithTax, opt => opt.MapFrom(src => src.TotalAmountWithTax))
+                .ForPath(dest => dest.TotalAmount.WithoutTax, opt => opt.MapFrom(src => src.TotalAmountWithoutTax))
+                .ForPath(dest => dest.Tax.TaxId, opt => opt.MapFrom(src => src.TaxId))
+                .ForPath(dest => dest.Tax.TaxPercentage, opt => opt.MapFrom(src => src.TaxPercentage))
+                .ForPath(dest => dest.EnergyConsumption.Total, opt => opt.MapFrom(src => src.TotalEnergyConsumption))
+                .ForPath(dest => dest.EnergyConsumption.Grid, opt => opt.MapFrom(src => src.EnergyConsumptionGrid));
             #endregion
 
             #region Tax

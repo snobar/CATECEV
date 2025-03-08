@@ -22,6 +22,10 @@ builder.Services.AddScoped<IAMPECOChargePoints, AMPECOChargePoints>();
 builder.Services.AddScoped<IAMPECOSessions, AMPECOSessions>();
 builder.Services.AddScoped<IAMPECOTaxes, AMPECOTaxes>();
 builder.Services.AddScoped<IUser, User>();
+builder.Services.AddScoped<ITax, Tax>();
+builder.Services.AddScoped<IConnector, Connector>();
+builder.Services.AddScoped<IChargePoint, ChargePoint>();
+builder.Services.AddScoped<IEvse, Evse>();
 
 
 builder.Services.AddSwaggerGen(c =>

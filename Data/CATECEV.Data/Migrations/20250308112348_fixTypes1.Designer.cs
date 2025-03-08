@@ -4,6 +4,7 @@ using CATECEV.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CATECEV.Data.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250308112348_fixTypes1")]
+    partial class fixTypes1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,7 +54,7 @@ namespace CATECEV.Data.Migrations
                     b.Property<int>("CurrentSecurityProfile")
                         .HasColumnType("int");
 
-                    b.Property<int?>("DesiredSecurityProfile")
+                    b.Property<int>("DesiredSecurityProfile")
                         .HasColumnType("int");
 
                     b.Property<string>("DesiredSecurityProfileStatus")
@@ -123,8 +126,8 @@ namespace CATECEV.Data.Migrations
                     b.Property<bool>("PlugAndCharge")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("RoamingOperatorId")
-                        .HasColumnType("int");
+                    b.Property<string>("RoamingOperatorId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)");

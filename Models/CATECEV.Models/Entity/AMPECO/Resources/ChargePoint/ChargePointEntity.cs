@@ -7,7 +7,7 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.ChargePoint
     {
         public int AMPECOId { get; set; }
         public string Name { get; set; }
-        public int? NetworkId { get; set; }
+        public string? NetworkId { get; set; }
         public string NetworkProtocol { get; set; }
         public string NetworkPassword { get; set; }
         public string NetworkIp { get; set; }
@@ -18,16 +18,16 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.ChargePoint
         public string NetworkStatus { get; set; }
         public string HardwareStatus { get; set; }
         public bool PlugAndCharge { get; set; }
-        public DateTime? LastBootNotification { get; set; }
+        //public DateTime? LastBootNotification { get; set; }
         public string AccessType { get; set; }
         public string ChargingProfile { get; set; }
         public int CurrentSecurityProfile { get; set; }
         public int? HardwareEnabledSecurityProfile { get; set; }
-        public int DesiredSecurityProfile { get; set; }
+        public int? DesiredSecurityProfile { get; set; }
         public string DesiredSecurityProfileStatus { get; set; }
-        public string RoamingOperatorId { get; set; }
-        public string OwnerPartnerId { get; set; }
-        public string OwnerPartnerContractId { get; set; }
+        public int? RoamingOperatorId { get; set; }
+        public int? OwnerPartnerId { get; set; }
+        public int? OwnerPartnerContractId { get; set; }
         public bool PartnerCorporateBillingAsDefault { get; set; }
         public List<string> Capabilities { get; set; }
         public DateTime LastUpdatedAt { get; set; }
