@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using CATECEV.CORE.Extensions;
 
 namespace CATECEV.API.Mapper
 {
@@ -33,15 +34,18 @@ namespace CATECEV.API.Mapper
             CreateMap<Models.AMPECO.resource.ChargePoint.Evse,
             CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity>()
                 .ForMember(dest => dest.AMPECOId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.AMPECOChargePointId, opt => opt.MapFrom(src => src.ChargePointId))
                 .ForMember(dest => dest.RoamingPhysicalReference, opt => opt.MapFrom(src => src.Roaming.PhysicalReference))
                 .ForMember(dest => dest.Capabilities, opt => opt.MapFrom(src => src.Roaming.Capabilities))
                 .ForMember(dest => dest.TariffIds, opt => opt.MapFrom(src => src.Roaming.TariffIds))
                 .ForMember(dest => dest.RoamingStatus, opt => opt.MapFrom(src => src.Roaming.Status))
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.ChargePointId, opt => opt.Ignore());
 
             CreateMap<CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity,
             Models.AMPECO.resource.ChargePoint.Evse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.AMPECOId))
+                .ForMember(dest => dest.ChargePointId, opt => opt.MapFrom(src => src.AMPECOChargePointId))
                 .ForPath(dest => dest.Roaming.PhysicalReference, opt => opt.MapFrom(src => src.RoamingPhysicalReference))
                 .ForPath(dest => dest.Roaming.Capabilities, opt => opt.MapFrom(src => src.Capabilities))
                 .ForPath(dest => dest.Roaming.TariffIds, opt => opt.MapFrom(src => src.TariffIds))
@@ -57,21 +61,39 @@ namespace CATECEV.API.Mapper
             #region Charge session
             CreateMap<Models.AMPECO.resource.Session.ChargingSession,
             CATECEV.Models.Entity.AMPECO.Resources.Session.ChargingSessionEntity>()
-                .ForMember(dest => dest.AMPECOId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.AMPECOId, opt => opt.MapFrom(src => src.Id.ToAnyType<int>()))
+                .ForMember(dest => dest.AMPECOUserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.AMPECOEvseId, opt => opt.MapFrom(src => src.EvseId))
+                .ForMember(dest => dest.AMPECOConnectorId, opt => opt.MapFrom(src => src.ConnectorId))
+                .ForMember(dest => dest.AMPECOChargePointId, opt => opt.MapFrom(src => src.ChargePointId))
+                .ForMember(dest => dest.AMPECOTaxId, opt => opt.MapFrom(src => src.Tax.TaxId))
                 .ForMember(dest => dest.TotalAmountWithTax, opt => opt.MapFrom(src => src.TotalAmount.WithTax))
                 .ForMember(dest => dest.TotalAmountWithoutTax, opt => opt.MapFrom(src => src.TotalAmount.WithoutTax))
-                .ForMember(dest => dest.TaxId, opt => opt.MapFrom(src => src.Tax.TaxId))
                 .ForMember(dest => dest.TaxPercentage, opt => opt.MapFrom(src => src.Tax.TaxPercentage))
                 .ForMember(dest => dest.TotalEnergyConsumption, opt => opt.MapFrom(src => src.EnergyConsumption.Total))
                 .ForMember(dest => dest.EnergyConsumptionGrid, opt => opt.MapFrom(src => src.EnergyConsumption.Grid))
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                .ForMember(dest => dest.EvseId, opt => opt.Ignore())
+                .ForMember(dest => dest.ConnectorId, opt => opt.Ignore())
+                .ForMember(dest => dest.ChargePointId, opt => opt.Ignore())
+                .ForMember(dest => dest.TaxId, opt => opt.Ignore())
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.ChargePoint, opt => opt.Ignore())
+                .ForMember(dest => dest.Evse, opt => opt.Ignore())
+                .ForMember(dest => dest.Connector, opt => opt.Ignore())
+                .ForMember(dest => dest.Tax, opt => opt.Ignore());
 
             CreateMap<CATECEV.Models.Entity.AMPECO.Resources.Session.ChargingSessionEntity,
             Models.AMPECO.resource.Session.ChargingSession>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.AMPECOId))
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.AMPECOId.ToString()))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.AMPECOUserId))
+                .ForMember(dest => dest.EvseId, opt => opt.MapFrom(src => src.AMPECOEvseId))
+                .ForMember(dest => dest.ConnectorId, opt => opt.MapFrom(src => src.AMPECOConnectorId))
+                .ForMember(dest => dest.ChargePointId, opt => opt.MapFrom(src => src.AMPECOChargePointId))
+                .ForPath(dest => dest.Tax.TaxId, opt => opt.MapFrom(src => src.TaxId))
                 .ForPath(dest => dest.TotalAmount.WithTax, opt => opt.MapFrom(src => src.TotalAmountWithTax))
                 .ForPath(dest => dest.TotalAmount.WithoutTax, opt => opt.MapFrom(src => src.TotalAmountWithoutTax))
-                .ForPath(dest => dest.Tax.TaxId, opt => opt.MapFrom(src => src.TaxId))
                 .ForPath(dest => dest.Tax.TaxPercentage, opt => opt.MapFrom(src => src.TaxPercentage))
                 .ForPath(dest => dest.EnergyConsumption.Total, opt => opt.MapFrom(src => src.TotalEnergyConsumption))
                 .ForPath(dest => dest.EnergyConsumption.Grid, opt => opt.MapFrom(src => src.EnergyConsumptionGrid));

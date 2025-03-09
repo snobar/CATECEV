@@ -5,8 +5,7 @@ using CATECEV.CORE.Extensions;
 using CATECEV.Data.Context;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using CATECEV.Models.Entity.AMPECO.Resources.Tax;
-using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
+using CATECEV.Models.Entity.AMPECO.Resources.Session;
 
 namespace CATECEV.API.Controllers
 {
@@ -18,6 +17,7 @@ namespace CATECEV.API.Controllers
         private readonly IAMPECOChargePoints _aMPECOChargePoints;
         private readonly IAMPECOSessions _aMPECOSessions;
         private readonly IAMPECOTaxes _aMPECOTaxes;
+        private readonly IAMPECOEvses _aMPECOEvses;
         private readonly IUser _entityUserService;
         private readonly ITax _entityTaxService;
         private readonly IEvse _entityEvseService;
@@ -25,7 +25,7 @@ namespace CATECEV.API.Controllers
         private readonly IChargePoint _entityChargePointService;
         private readonly AppDBContext _appContext;
         private readonly IMapper _mapper;
-        public MapDataController(IAMPECOUser user, AppDBContext appContext, IMapper mapper, IUser entityUserService, IAMPECOChargePoints aMPECOChargePoints, IAMPECOSessions aMPECOSessions, IAMPECOTaxes aMPECOTaxes, ITax entityTaxService, IEvse entityEvseService, IConnector entityConnectorService, IChargePoint entityChargePointService)
+        public MapDataController(IAMPECOUser user, AppDBContext appContext, IMapper mapper, IUser entityUserService, IAMPECOChargePoints aMPECOChargePoints, IAMPECOSessions aMPECOSessions, IAMPECOTaxes aMPECOTaxes, ITax entityTaxService, IEvse entityEvseService, IConnector entityConnectorService, IChargePoint entityChargePointService, IAMPECOEvses aMPECOEvses)
         {
             _user = user;
             _appContext = appContext;
@@ -34,6 +34,7 @@ namespace CATECEV.API.Controllers
             _aMPECOChargePoints = aMPECOChargePoints;
             _aMPECOSessions = aMPECOSessions;
             _aMPECOTaxes = aMPECOTaxes;
+            _aMPECOEvses = aMPECOEvses;
             _entityTaxService = entityTaxService;
             _entityEvseService = entityEvseService;
             _entityConnectorService = entityConnectorService;
@@ -45,7 +46,6 @@ namespace CATECEV.API.Controllers
         {
             var pageNumber = 1;
 
-            /*
             #region User
             var userData = await _user.GetUsers(pageNumber);
 
@@ -78,7 +78,7 @@ namespace CATECEV.API.Controllers
 
                     if (userEntity.IsNotNullOrEmpty())
                     {
-                        await _appContext.User.AddRangeAsync(userEntity);
+                        await _appContext.User.AddRangeAsync(userEntity.DistinctBy(x => x.AMPECOId));
                         await _appContext.SaveChangesAsync();
                     }
                 }
@@ -142,7 +142,57 @@ namespace CATECEV.API.Controllers
 
                     if (chargePointEntity.IsNotNullOrEmpty())
                     {
-                        await _appContext.ChargePoint.AddRangeAsync(chargePointEntity);
+                        await _appContext.ChargePoint.AddRangeAsync(chargePointEntity.DistinctBy(x => x.AMPECOId));
+                        await _appContext.SaveChangesAsync();
+                    }
+                }
+            }
+            #endregion
+
+            #region Evse
+            pageNumber = 1;
+
+            var evseData = await _aMPECOEvses.GetEvse(pageNumber);
+            if (evseData.IsNotNullOrEmpty() && evseData.Data.IsNotNullOrEmpty() && evseData.TotalRecords > 0)
+            {
+                var evseEntity = new List<CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity>();
+                var mappedEvseData = _mapper.Map<IEnumerable<Models.AMPECO.resource.ChargePoint.Evse>, IEnumerable<CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity>>(evseData.Data);
+                evseEntity.AddRange(mappedEvseData.ToList());
+
+                while (evseData.TotalPages > pageNumber)
+                {
+                    var nextEvseData = await _aMPECOEvses.GetEvse(++pageNumber);
+                    if (nextEvseData.IsNotNullOrEmpty() && nextEvseData.Data.IsNotNullOrEmpty())
+                    {
+                        var mappedNextEvseData = _mapper.Map<IEnumerable<Models.AMPECO.resource.ChargePoint.Evse>, IEnumerable<CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity>>(nextEvseData.Data);
+                        evseEntity.AddRange(mappedNextEvseData.ToList());
+                    }
+                }
+
+                if (evseEntity.IsNotNullOrEmpty())
+                {
+                    var entityChargePointDataForIds = await _entityChargePointService.GetChargePointByAMPECOIds(evseEntity.Select(x => x.AMPECOChargePointId));
+                    var entityChargePointDataDictionary = entityChargePointDataForIds.ToDictionary(x => x.AMPECOId);
+
+                    foreach (var item in evseEntity.ToList())
+                    {
+                        var checkEvsePoint = await _appContext.Evse.AnyAsync(x => x.AMPECOId == item.AMPECOId);
+                        if (checkEvsePoint)
+                        {
+                            evseEntity.Remove(item);
+                        }
+                        else
+                        {
+                            if (entityChargePointDataDictionary.TryGetValue(item.AMPECOChargePointId, out var entityChargePoint))
+                            {
+                                item.ChargePointId = entityChargePoint.Id;
+                            }
+                        }
+                    }
+
+                    if (evseEntity.IsNotNullOrEmpty())
+                    {
+                        await _appContext.Evse.AddRangeAsync(evseEntity.DistinctBy(x => x.AMPECOId));
                         await _appContext.SaveChangesAsync();
                     }
                 }
@@ -171,12 +221,23 @@ namespace CATECEV.API.Controllers
 
                 if (taxesEntity.IsNotNullOrEmpty())
                 {
-                    await _appContext.Tax.AddRangeAsync(taxesEntity);
-                    await _appContext.SaveChangesAsync();
+                    foreach (var item in taxesEntity.ToList())
+                    {
+                        var checkTax = await _appContext.Tax.AnyAsync(x => x.AMPECOId == item.AMPECOId);
+                        if (checkTax)
+                        {
+                            taxesEntity.Remove(item);
+                        }
+                    }
+
+                    if (taxesEntity.IsNotNullOrEmpty())
+                    {
+                        await _appContext.Tax.AddRangeAsync(taxesEntity.DistinctBy(x => x.AMPECOId));
+                        await _appContext.SaveChangesAsync();
+                    }
                 }
             }
             #endregion
-            */
 
             #region ChargingSession
             pageNumber = 1;
@@ -187,7 +248,7 @@ namespace CATECEV.API.Controllers
                 var chargingSessionEntity = new List<CATECEV.Models.Entity.AMPECO.Resources.Session.ChargingSessionEntity>();
                 var mappedChargingSessionData = _mapper.Map<IEnumerable<Models.AMPECO.resource.Session.ChargingSession>, IEnumerable<CATECEV.Models.Entity.AMPECO.Resources.Session.ChargingSessionEntity>>(chargingSessionData.Data);
                 chargingSessionEntity.AddRange(mappedChargingSessionData.ToList());
-                
+
                 while (chargingSessionData.TotalPages > pageNumber)
                 {
                     var nextChargingSessionData = await _aMPECOSessions.GetChargingSession(++pageNumber);
@@ -200,56 +261,62 @@ namespace CATECEV.API.Controllers
 
                 if (chargingSessionEntity.IsNotNullOrEmpty())
                 {
-                    var entityUserDataForIds = await _entityUserService.GetUsersByAMPECOIds(chargingSessionEntity.Select(x => x.UserId));
-                    var entityUserDataDictionary = entityUserDataForIds.ToDictionary(x => x.AMPECOId, x => x.Id);
+                    var entityUserDataForIds = await _entityUserService.GetUsersByAMPECOIds(chargingSessionEntity.Select(x => x.AMPECOUserId));
+                    var entityUserDataDictionary = entityUserDataForIds.ToDictionary(x => x.AMPECOId);
 
-                    var entityChargePointDataForIds = await _entityChargePointService.GetChargePointByAMPECOIds(chargingSessionEntity.Select(x => x.ChargePointId));
-                    var entityChargePointDataDictionary = entityChargePointDataForIds.ToDictionary(x => x.AMPECOId, x => x.Id);
-                    
-                    var entityEvseDataForIds = await _entityEvseService.GetEvseByAMPECOIds(chargingSessionEntity.Select(x => x.ChargePointId));
-                    var entityEvseDataDictionary = entityEvseDataForIds.ToDictionary(x => x.AMPECOId, x => x.Id);
-                     
-                    var entityTaxDataForIds = await _entityTaxService.GetTaxesByAMPECOIds(chargingSessionEntity.Select(x => x.TaxId));
-                    var entityTaxDataDictionary = entityTaxDataForIds.ToDictionary(x => x.AMPECOId, x => x.Id);
+                    var entityChargePointDataForIds = await _entityChargePointService.GetChargePointByAMPECOIds(chargingSessionEntity.Select(x => x.AMPECOChargePointId));
+                    var entityChargePointDataDictionary = entityChargePointDataForIds.ToDictionary(x => x.AMPECOId);
 
-                    var entityConnectorDataForIds = await _entityConnectorService.GetConnectorByAMPECOIds(chargingSessionEntity.Where(x => x.ConnectorId.HasValue).Select(x => x.ConnectorId.Value));
-                    var entityConnectorDataDictionary = entityConnectorDataForIds.ToDictionary(x => x.AMPECOId, x => x.Id);
+                    var entityEvseDataForIds = await _entityEvseService.GetEvseByAMPECOIds(chargingSessionEntity.Select(x => x.AMPECOChargePointId));
+                    var entityEvseDataDictionary = entityEvseDataForIds.ToDictionary(x => x.AMPECOId);
 
+                    var entityTaxDataForIds = await _entityTaxService.GetTaxesByAMPECOIds(chargingSessionEntity.Select(x => x.AMPECOTaxId));
+                    var entityTaxDataDictionary = entityTaxDataForIds.ToDictionary(x => x.AMPECOId);
 
+                    var entityConnectorDataForIds = await _entityConnectorService.GetConnectorByAMPECOIds(chargingSessionEntity.Where(x => x.AMPECOConnectorId.HasValue).Select(x => x.AMPECOConnectorId.Value));
+                    var entityConnectorDataDictionary = entityConnectorDataForIds.ToDictionary(x => x.AMPECOId);
+
+                    var allChargingSession = await _appContext.ChargingSession.Where(x => x.IsActive).ToListAsync();
+                    var allChargingSessionDictionary = allChargingSession.ToDictionary(x => x.AMPECOId);
                     foreach (var item in chargingSessionEntity.ToList())
                     {
-                        var checkChargingSession = await _appContext.ChargingSession.AnyAsync(x => x.AMPECOId == item.AMPECOId);
-                        if (checkChargingSession)
+                        if (allChargingSessionDictionary.TryGetValue(item.AMPECOId, out var tempDataNoUse))
                         {
                             chargingSessionEntity.Remove(item);
                         }
                         else
                         {
-                            if (entityUserDataDictionary.TryGetValue(item.UserId, out var entityUserId))
+                            if (entityUserDataDictionary.TryGetValue(item.AMPECOUserId, out var entityUser))
                             {
-                                item.UserId = entityUserId;
+                                item.UserId = entityUser.Id;
                             }
 
-                            if (entityUserDataDictionary.TryGetValue(item.ChargePointId, out var entityChargePointId))
+                            if (entityChargePointDataDictionary.TryGetValue(item.AMPECOChargePointId, out var entityChargePoint))
                             {
-                                item.ChargePointId = entityChargePointId;
+                                item.ChargePointId = entityChargePoint.Id;
                             }
 
-                            if (entityEvseDataDictionary.TryGetValue(item.EvseId, out var entityEvseId))
+                            if (entityEvseDataDictionary.TryGetValue(item.AMPECOEvseId, out var entityEvse))
                             {
-                                item.EvseId = entityEvseId;
+                                item.EvseId = entityEvse.Id;
                             }
 
-                            if (item.ConnectorId.HasValue && entityConnectorDataDictionary.TryGetValue(item.ConnectorId.Value, out var entityConnectorId))
+                            if (item.AMPECOConnectorId.HasValue && entityConnectorDataDictionary.TryGetValue(item.AMPECOConnectorId.Value, out var entityConnector))
                             {
-                                item.ConnectorId = entityConnectorId;
+                                item.ConnectorId = entityConnector.Id;
                             }
 
-                            if (entityTaxDataDictionary.TryGetValue(item.TaxId, out var entityTaxId))
+                            if (entityTaxDataDictionary.TryGetValue(item.AMPECOTaxId, out var entityTax))
                             {
-                                item.TaxId = entityTaxId;
+                                item.TaxId = entityTax.Id;
                             }
                         }
+                    }
+
+                    if (chargingSessionEntity.IsNotNullOrEmpty())
+                    {
+                        await _appContext.ChargingSession.AddRangeAsync(chargingSessionEntity.DistinctBy(x => x.AMPECOId));
+                        await _appContext.SaveChangesAsync();
                     }
                 }
             }

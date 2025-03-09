@@ -30,5 +30,21 @@ namespace CATECEV.CORE.Extensions
                 return (value is not null);
             });
         }
+
+        public static T ToAnyType<T>(this object value)
+        {
+            var Type = typeof(T);
+            var UnderlyingType = Type.UnderlyingSystemType;
+
+            if (value == null)
+            {
+                return default;
+            }
+            if (UnderlyingType.IsNotNullOrEmpty())
+            {
+                return (T)Convert.ChangeType(value, UnderlyingType);
+            }
+            return (T)Convert.ChangeType(value, Type);
+        }
     }
 }

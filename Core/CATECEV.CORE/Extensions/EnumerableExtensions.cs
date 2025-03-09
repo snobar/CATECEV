@@ -10,5 +10,9 @@
         {
             return (list is not null) && list.Any();
         }
+        public static bool IsNotNullOrEmpty<T>(this List<T> list)
+        {
+            return (list is not null) && list.Any();
+        }
     }
 }

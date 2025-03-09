@@ -21,6 +21,7 @@ builder.Services.AddScoped<IAMPECOUser, AMPECOUser>();
 builder.Services.AddScoped<IAMPECOChargePoints, AMPECOChargePoints>();
 builder.Services.AddScoped<IAMPECOSessions, AMPECOSessions>();
 builder.Services.AddScoped<IAMPECOTaxes, AMPECOTaxes>();
+builder.Services.AddScoped<IAMPECOEvses, AMPECOEvses>();
 builder.Services.AddScoped<IUser, User>();
 builder.Services.AddScoped<ITax, Tax>();
 builder.Services.AddScoped<IConnector, Connector>();

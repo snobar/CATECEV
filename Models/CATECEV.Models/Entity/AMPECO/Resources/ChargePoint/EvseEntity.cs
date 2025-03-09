@@ -28,7 +28,8 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.ChargePoint
         #endregion
 
         #region ChargePoint
-        public int ChargePointId { get; set; }
+        public int? ChargePointId { get; set; }
+        public int AMPECOChargePointId { get; set; }
         public ChargePointEntity ChargePoint { get; set; }
         #endregion
 

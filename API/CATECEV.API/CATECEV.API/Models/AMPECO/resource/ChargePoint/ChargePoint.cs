@@ -43,6 +43,7 @@
     public class Evse
     {
         public int Id { get; set; }
+        public int? ChargePointId { get; set; }
         public string ExternalId { get; set; }
         public string? NetworkId { get; set; }
         public string PhysicalReference { get; set; }

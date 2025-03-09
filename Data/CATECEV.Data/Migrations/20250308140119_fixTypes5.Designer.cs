@@ -4,6 +4,7 @@ using CATECEV.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CATECEV.Data.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250308140119_fixTypes5")]
+    partial class fixTypes5
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -186,9 +189,6 @@ namespace CATECEV.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AMPECOChargePointId")
-                        .HasColumnType("int");
-
                     b.Property<int>("AMPECOId")
                         .HasColumnType("int");
 
@@ -198,7 +198,7 @@ namespace CATECEV.Data.Migrations
                     b.PrimitiveCollection<string>("Capabilities")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ChargePointId")
+                    b.Property<int>("ChargePointId")
                         .HasColumnType("int");
 
                     b.Property<string>("ChargingProfile")
@@ -264,34 +264,19 @@ namespace CATECEV.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AMPECOChargePointId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("AMPECOConnectorId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("AMPECOEvseId")
-                        .HasColumnType("int");
-
                     b.Property<int>("AMPECOId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("AMPECOTaxId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("AMPECOUserId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("AuthorizationId")
+                    b.Property<int>("AuthorizationId")
                         .HasColumnType("int");
 
                     b.Property<string>("BillingStatus")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ChargePointId")
+                    b.Property<int>("ChargePointId")
                         .HasColumnType("int");
 
                     b.Property<int?>("ConnectorId")
@@ -309,7 +294,7 @@ namespace CATECEV.Data.Migrations
                     b.Property<int>("EnergyConsumptionGrid")
                         .HasColumnType("int");
 
-                    b.Property<int?>("EvseId")
+                    b.Property<int>("EvseId")
                         .HasColumnType("int");
 
                     b.Property<string>("EvsePhysicalReference")
@@ -351,9 +336,6 @@ namespace CATECEV.Data.Migrations
                     b.Property<double>("PowerKw")
                         .HasColumnType("float");
 
-                    b.Property<string>("Reason")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int?>("ReceiptId")
                         .HasColumnType("int");
 
@@ -369,10 +351,10 @@ namespace CATECEV.Data.Migrations
                     b.Property<DateTime?>("StoppedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("TariffSnapshotId")
+                    b.Property<int>("TariffSnapshotId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TaxId")
+                    b.Property<int>("TaxId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("TaxPercentage")
@@ -390,7 +372,7 @@ namespace CATECEV.Data.Migrations
                     b.Property<int>("TotalEnergyConsumption")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserId")
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -859,7 +841,8 @@ namespace CATECEV.Data.Migrations
                     b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ChargePointEntity", "ChargePoint")
                         .WithMany("Evses")
                         .HasForeignKey("ChargePointId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("ChargePoint");
                 });
@@ -868,7 +851,9 @@ namespace CATECEV.Data.Migrations
                 {
                     b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ChargePointEntity", "ChargePoint")
                         .WithMany("ChargingSessions")
-                        .HasForeignKey("ChargePointId");
+                        .HasForeignKey("ChargePointId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ConnectorEntity", "Connector")
                         .WithMany("ChargingSessions")
@@ -878,17 +863,20 @@ namespace CATECEV.Data.Migrations
                     b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity", "Evse")
                         .WithMany("ChargingSessions")
                         .HasForeignKey("EvseId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.Tax.TaxEntity", "Tax")
                         .WithMany("ChargingSession")
                         .HasForeignKey("TaxId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.User.User", "User")
                         .WithMany("ChargingSessions")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("ChargePoint");
 

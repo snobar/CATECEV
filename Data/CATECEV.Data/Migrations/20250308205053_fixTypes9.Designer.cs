@@ -4,6 +4,7 @@ using CATECEV.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CATECEV.Data.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250308205053_fixTypes9")]
+    partial class fixTypes9
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -350,9 +353,6 @@ namespace CATECEV.Data.Migrations
 
                     b.Property<double>("PowerKw")
                         .HasColumnType("float");
-
-                    b.Property<string>("Reason")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("ReceiptId")
                         .HasColumnType("int");
