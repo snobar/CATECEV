@@ -15,6 +15,9 @@ namespace CATECEV.API.EntityHelper.Service
         public async Task<IEnumerable<CATECEV.Models.Entity.AMPECO.Resources.User.User>> GetUsersByAMPECOIds(IEnumerable<int> lstAMPECOIds)
         {
             var _data = await _appContext.User.Where(x => lstAMPECOIds.Contains(x.AMPECOId)).ToListAsync();
+
+            var sss = _appContext.User.Where(x => lstAMPECOIds.Contains(x.AMPECOId)).ToQueryString();
+
             return _data;
         }
 
