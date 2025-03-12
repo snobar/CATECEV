@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CATECEV.API.EntityHelper.IService;
+using CATECEV.API.Helper.IService;
 using CATECEV.API.Models.Reports.Sessions;
 using CATECEV.Data.Context;
 using Microsoft.AspNetCore.Mvc;
@@ -11,24 +12,17 @@ namespace CATECEV.API.Controllers
     [ApiController]
     public class ReportsController : ControllerBase
     {
-        private readonly IUser _entityUserService;
-        private readonly ITax _entityTaxService;
-        private readonly IEvse _entityEvseService;
-        private readonly IConnector _entityConnectorService;
-        private readonly IChargePoint _entityChargePointService;
         private readonly AppDBContext _appContext;
         private readonly IMapper _mapper;
+        private readonly IAMPECOResource<Models.AMPECO.resource.Location.Location> _locationResource;
 
+        private Dictionary<int, Models.AMPECO.resource.Location.Location> locationKeyValuePairs = new Dictionary<int, Models.AMPECO.resource.Location.Location>();
 
-        public ReportsController(IUser entityUserService, ITax entityTaxService, IEvse entityEvseService, IConnector entityConnectorService, IChargePoint entityChargePointService, AppDBContext appContext, IMapper mapper)
+        public ReportsController(AppDBContext appContext, IMapper mapper, IAMPECOResource<Models.AMPECO.resource.Location.Location> locationResource)
         {
-            _entityUserService = entityUserService;
-            _entityTaxService = entityTaxService;
-            _entityEvseService = entityEvseService;
-            _entityConnectorService = entityConnectorService;
-            _entityChargePointService = entityChargePointService;
             _appContext = appContext;
             _mapper = mapper;
+            _locationResource = locationResource;
         }
 
         [HttpGet("SessionsRawDetailedData")]

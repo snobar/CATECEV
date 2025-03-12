@@ -1,5 +1,6 @@
 ﻿using CATECEV.Models.Entity;
 using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
+using CATECEV.Models.Entity.AMPECO.Resources.Location;
 using CATECEV.Models.Entity.AMPECO.Resources.Session;
 using CATECEV.Models.Entity.AMPECO.Resources.Tax;
 using CATECEV.Models.Entity.AMPECO.Resources.User;
@@ -29,6 +30,12 @@ namespace CATECEV.Data.Context
         public DbSet<EvseEntity> Evse { get; set; }
         public DbSet<TaxEntity> Tax { get; set; }
         public DbSet<TaxDisplayNameEntity> TaxDisplayName { get; set; }
+        public DbSet<LocationEntity> Location { get; set; }
+        public DbSet<LocationNameLocalization> LocationName { get; set; }
+        public DbSet<LocationDescriptionLocalization> LocationDescription { get; set; }
+        public DbSet<LocationShortDescriptionLocalization> LocationShortDescription { get; set; }
+        public DbSet<LocationAdditionalDescriptionLocalization> LocationAdditionalDescription { get; set; }
+        public DbSet<LocationAddressLocalization> LocationAddress { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -258,6 +265,74 @@ namespace CATECEV.Data.Context
                 entity.HasOne(e => e.Tax)
                       .WithMany(u => u.DisplayName)
                       .HasForeignKey(e => e.TaxId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+            });
+            #endregion
+
+            #region Location
+            modelBuilder.Entity<LocationEntity>(entity =>
+            {
+                entity.ToTable("Location", "Resources");
+                entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<LocationNameLocalization>(entity =>
+            {
+                entity.ToTable("LocationName", "Resources");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Location)
+                      .WithMany(u => u.Name)
+                      .HasForeignKey(e => e.LocationId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+            });
+
+            modelBuilder.Entity<LocationDescriptionLocalization>(entity =>
+            {
+                entity.ToTable("LocationDescription", "Resources");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Location)
+                      .WithMany(u => u.Description)
+                      .HasForeignKey(e => e.LocationId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+            });
+
+            modelBuilder.Entity<LocationShortDescriptionLocalization>(entity =>
+            {
+                entity.ToTable("LocationShortDescription", "Resources");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Location)
+                      .WithMany(u => u.ShortDescription)
+                      .HasForeignKey(e => e.LocationId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+            });
+
+            modelBuilder.Entity<LocationAdditionalDescriptionLocalization>(entity =>
+            {
+                entity.ToTable("LocationAdditionalDescription", "Resources");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Location)
+                      .WithMany(u => u.AdditionalDescription)
+                      .HasForeignKey(e => e.LocationId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+            });
+
+            modelBuilder.Entity<LocationAddressLocalization>(entity =>
+            {
+                entity.ToTable("LocationAddress", "Resources");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(e => e.Location)
+                      .WithMany(u => u.Address)
+                      .HasForeignKey(e => e.LocationId)
                       .OnDelete(DeleteBehavior.Restrict);
 
             });

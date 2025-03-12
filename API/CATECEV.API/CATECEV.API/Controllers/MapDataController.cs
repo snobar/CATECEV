@@ -134,7 +134,9 @@ namespace CATECEV.API.Controllers
 
                     if (userEntity.IsNotNullOrEmpty())
                     {
-                        var entityGroupData = await _appContext.UserGroup.Where(u => userEntity.Where(x => x.UserGroupIds.IsNotNullOrEmpty()).SelectMany(x => x.UserGroupIds).Contains(u.AMPECOId)).ToListAsync();
+                        var groupIds = userEntity.Where(x => x.UserGroupIds.IsNotNullOrEmpty()).SelectMany(x => x.UserGroupIds);
+
+                        var entityGroupData = await _appContext.UserGroup.Where(u => groupIds.Contains(u.AMPECOId)).ToListAsync();
                         var entityGroupDataDictionary = entityGroupData.ToDictionary(x => x.AMPECOId);
 
                         foreach (var item in userEntity.ToList())
