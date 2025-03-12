@@ -14,6 +14,12 @@ namespace CATECEV.API.Mapper
                 .ReverseMap()
                 .ForMember(destination => destination.Id, opt => opt.MapFrom(src => src.AMPECOId));
 
+            CreateMap<Models.AMPECO.resource.users.UserGroup, CATECEV.Models.Entity.AMPECO.Resources.User.UserGroup>()
+                .ForMember(destination => destination.AMPECOId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(destination => destination.Id, opt => opt.Ignore())
+                .ReverseMap()
+                .ForMember(destination => destination.Id, opt => opt.MapFrom(src => src.AMPECOId));
+
             CreateMap<Models.AMPECO.resource.users.UserOptions, CATECEV.Models.Entity.AMPECO.Resources.User.UserOptions>().ReverseMap();
             #endregion
 

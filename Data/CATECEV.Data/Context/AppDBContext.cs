@@ -18,6 +18,7 @@ namespace CATECEV.Data.Context
         public DbSet<VehicleType> VehicleType { get; set; }
         public DbSet<Country> Country { get; set; }
         public DbSet<City> City { get; set; }
+        public DbSet<UserGroup> UserGroup { get; set; }
         public DbSet<User> User { get; set; }
         public DbSet<UserOptions> UserOptions { get; set; }
         public DbSet<Lookups> Lookups { get; set; }
@@ -146,6 +147,12 @@ namespace CATECEV.Data.Context
             #endregion
 
             #region User
+            modelBuilder.Entity<UserGroup>(entity =>
+            {
+                entity.ToTable("UserGroup", "Resources");
+                entity.HasKey(e => e.Id);
+            });
+
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("User", "Resources");

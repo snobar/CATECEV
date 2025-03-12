@@ -8,6 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using CATECEV.Models.Entity.AMPECO.Resources.Session;
 using Microsoft.Extensions.Logging;
 using CATECEV.CORE.Logger;
+using System.Collections.Generic;
+using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
+using System.Linq;
 
 namespace CATECEV.API.Controllers
 {
@@ -20,6 +23,7 @@ namespace CATECEV.API.Controllers
         private readonly IAMPECOSessions _aMPECOSessions;
         private readonly IAMPECOTaxes _aMPECOTaxes;
         private readonly IAMPECOEvses _aMPECOEvses;
+        private readonly IAMPECOResource<Models.AMPECO.resource.users.UserGroup> _userGroupResource;
         private readonly IUser _entityUserService;
         private readonly ITax _entityTaxService;
         private readonly IEvse _entityEvseService;
@@ -27,7 +31,7 @@ namespace CATECEV.API.Controllers
         private readonly IChargePoint _entityChargePointService;
         private readonly AppDBContext _appContext;
         private readonly IMapper _mapper;
-        public MapDataController(IAMPECOUser user, AppDBContext appContext, IMapper mapper, IUser entityUserService, IAMPECOChargePoints aMPECOChargePoints, IAMPECOSessions aMPECOSessions, IAMPECOTaxes aMPECOTaxes, ITax entityTaxService, IEvse entityEvseService, IConnector entityConnectorService, IChargePoint entityChargePointService, IAMPECOEvses aMPECOEvses)
+        public MapDataController(IAMPECOUser user, AppDBContext appContext, IMapper mapper, IUser entityUserService, IAMPECOChargePoints aMPECOChargePoints, IAMPECOSessions aMPECOSessions, IAMPECOTaxes aMPECOTaxes, ITax entityTaxService, IEvse entityEvseService, IConnector entityConnectorService, IChargePoint entityChargePointService, IAMPECOEvses aMPECOEvses, IAMPECOResource<Models.AMPECO.resource.users.UserGroup> userGroupResource)
         {
             _user = user;
             _appContext = appContext;
@@ -41,6 +45,7 @@ namespace CATECEV.API.Controllers
             _entityEvseService = entityEvseService;
             _entityConnectorService = entityConnectorService;
             _entityChargePointService = entityChargePointService;
+            _userGroupResource = userGroupResource;
         }
 
         [HttpGet("SessionTrigger")]
@@ -67,7 +72,48 @@ namespace CATECEV.API.Controllers
 
             try
             {
+                #region UserGroup
+                var userGroupData = await _userGroupResource.GetResourceData(pageNumber);
+
+                if (userGroupData.IsNotNullOrEmpty() && userGroupData.Data.IsNotNullOrEmpty() && userGroupData.TotalRecords > 0)
+                {
+                    var userGroupEntity = new List<CATECEV.Models.Entity.AMPECO.Resources.User.UserGroup>();
+                    var mappedUserGroupData = _mapper.Map<IEnumerable<Models.AMPECO.resource.users.UserGroup>, IEnumerable<CATECEV.Models.Entity.AMPECO.Resources.User.UserGroup>>(userGroupData.Data);
+                    userGroupEntity.AddRange(mappedUserGroupData.ToList());
+
+                    while (userGroupData.TotalPages > pageNumber)
+                    {
+                        var nextUserGroupData = await _userGroupResource.GetResourceData(++pageNumber);
+                        if (nextUserGroupData.IsNotNullOrEmpty() && nextUserGroupData.Data.IsNotNullOrEmpty())
+                        {
+                            var mappedGroupNextUserData = _mapper.Map<IEnumerable<Models.AMPECO.resource.users.UserGroup>, IEnumerable<CATECEV.Models.Entity.AMPECO.Resources.User.UserGroup>>(nextUserGroupData.Data);
+                            userGroupEntity.AddRange(mappedGroupNextUserData.ToList());
+                        }
+                    }
+
+                    if (userGroupEntity.IsNotNullOrEmpty())
+                    {
+                        foreach (var item in userGroupEntity.ToList())
+                        {
+                            var checkGroup = await _appContext.UserGroup.AnyAsync(x => x.AMPECOId == item.AMPECOId);
+                            if (checkGroup)
+                            {
+                                userGroupEntity.Remove(item);
+                            }
+                        }
+
+                        if (userGroupEntity.IsNotNullOrEmpty())
+                        {
+                            await _appContext.UserGroup.AddRangeAsync(userGroupEntity.DistinctBy(x => x.AMPECOId));
+                            await _appContext.SaveChangesAsync();
+                        }
+                    }
+                }
+                #endregion
+
                 #region User
+                pageNumber = 1;
+
                 var userData = await _user.GetUsers(pageNumber);
 
                 if (userData.IsNotNullOrEmpty() && userData.Data.IsNotNullOrEmpty() && userData.TotalRecords > 0)
@@ -88,12 +134,23 @@ namespace CATECEV.API.Controllers
 
                     if (userEntity.IsNotNullOrEmpty())
                     {
+                        var entityGroupData = await _appContext.UserGroup.Where(u => userEntity.Where(x => x.UserGroupIds.IsNotNullOrEmpty()).SelectMany(x => x.UserGroupIds).Contains(u.AMPECOId)).ToListAsync();
+                        var entityGroupDataDictionary = entityGroupData.ToDictionary(x => x.AMPECOId);
+
                         foreach (var item in userEntity.ToList())
                         {
                             var checkUser = await _appContext.User.AnyAsync(x => x.AMPECOId == item.AMPECOId);
                             if (checkUser)
                             {
                                 userEntity.Remove(item);
+                            }
+                            else if (item.UserGroupIds.IsNotNullOrEmpty())
+                            {
+                                item.UserGroups = string.Join(",",
+                                    item.UserGroupIds
+                                        .Select(id => entityGroupDataDictionary.TryGetValue(id, out var userGroup) ? userGroup.Name : null)
+                                        .Where(name => name != null)
+                                );
                             }
                         }
 
@@ -348,7 +405,7 @@ namespace CATECEV.API.Controllers
             catch (Exception ex)
             {
                 return Ok($"Message: {ex.Message}\n InnerException: {ex.InnerException}");
-            }            
+            }
         }
     }
 }

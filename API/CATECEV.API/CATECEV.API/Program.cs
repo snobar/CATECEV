@@ -27,6 +27,7 @@ builder.Services.AddScoped<ITax, Tax>();
 builder.Services.AddScoped<IConnector, Connector>();
 builder.Services.AddScoped<IChargePoint, ChargePoint>();
 builder.Services.AddScoped<IEvse, Evse>();
+builder.Services.AddScoped(typeof(IAMPECOResource<>), typeof(AMPECOResource<>));
 
 
 builder.Services.AddSwaggerGen(c =>

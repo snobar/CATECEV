@@ -31,8 +31,8 @@ namespace CATECEV.API.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet("SessionsRawData")]
-        public async Task<IActionResult> SessionsRawData()
+        [HttpGet("SessionsRawDetailedData")]
+        public async Task<IActionResult> SessionsRawDetailedData()
         {
             var result = await (from a in _appContext.ChargingSession
                                 join e in _appContext.Evse on a.AMPECOEvseId equals e.AMPECOId
@@ -58,6 +58,12 @@ namespace CATECEV.API.Controllers
                         .ToListAsync();
 
             return Ok(result);
+        }
+
+        [HttpGet("SessionsRawRegularData")]
+        public async Task<IActionResult> SessionsRawRegularData()
+        {
+            return Ok();
         }
     }
 }

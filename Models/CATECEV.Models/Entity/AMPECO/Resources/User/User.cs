@@ -26,6 +26,7 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.User
         public decimal Balance { get; set; }
         public string Status { get; set; }
         public List<int> UserGroupIds { get; set; }
+        public string UserGroups { get; set; }
         public string SubscriptionId { get; set; }
         public string ExternalId { get; set; }
         public DateTime? LastUpdatedAt { get; set; }
