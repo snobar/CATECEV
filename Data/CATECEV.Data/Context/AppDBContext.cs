@@ -1,4 +1,5 @@
 ﻿using CATECEV.Models.Entity;
+using CATECEV.Models.Entity.AMPECO.Resources.Authorization;
 using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
 using CATECEV.Models.Entity.AMPECO.Resources.Location;
 using CATECEV.Models.Entity.AMPECO.Resources.Session;
@@ -36,6 +37,7 @@ namespace CATECEV.Data.Context
         public DbSet<LocationShortDescriptionLocalization> LocationShortDescription { get; set; }
         public DbSet<LocationAdditionalDescriptionLocalization> LocationAdditionalDescription { get; set; }
         public DbSet<LocationAddressLocalization> LocationAddress { get; set; }
+        public DbSet<AuthorizationEntity> Authorization { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -335,6 +337,14 @@ namespace CATECEV.Data.Context
                       .HasForeignKey(e => e.LocationId)
                       .OnDelete(DeleteBehavior.Restrict);
 
+            });
+            #endregion
+
+            #region Authorization
+            modelBuilder.Entity<AuthorizationEntity>(entity =>
+            {
+                entity.ToTable("Authorization", "Resources");
+                entity.HasKey(e => e.Id);
             });
             #endregion
         }

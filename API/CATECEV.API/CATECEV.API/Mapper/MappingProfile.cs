@@ -73,6 +73,7 @@ namespace CATECEV.API.Mapper
                 .ForMember(dest => dest.AMPECOConnectorId, opt => opt.MapFrom(src => src.ConnectorId))
                 .ForMember(dest => dest.AMPECOChargePointId, opt => opt.MapFrom(src => src.ChargePointId))
                 .ForMember(dest => dest.AMPECOTaxId, opt => opt.MapFrom(src => src.Tax.TaxId))
+                .ForMember(dest => dest.AMPECOAuthorizationId, opt => opt.MapFrom(src => src.AuthorizationId))
                 .ForMember(dest => dest.TotalAmountWithTax, opt => opt.MapFrom(src => src.TotalAmount.WithTax))
                 .ForMember(dest => dest.TotalAmountWithoutTax, opt => opt.MapFrom(src => src.TotalAmount.WithoutTax))
                 .ForMember(dest => dest.TaxPercentage, opt => opt.MapFrom(src => src.Tax.TaxPercentage))
@@ -97,6 +98,7 @@ namespace CATECEV.API.Mapper
                 .ForMember(dest => dest.EvseId, opt => opt.MapFrom(src => src.AMPECOEvseId))
                 .ForMember(dest => dest.ConnectorId, opt => opt.MapFrom(src => src.AMPECOConnectorId))
                 .ForMember(dest => dest.ChargePointId, opt => opt.MapFrom(src => src.AMPECOChargePointId))
+                .ForMember(dest => dest.AuthorizationId, opt => opt.MapFrom(src => src.AMPECOAuthorizationId))
                 .ForPath(dest => dest.Tax.TaxId, opt => opt.MapFrom(src => src.TaxId))
                 .ForPath(dest => dest.TotalAmount.WithTax, opt => opt.MapFrom(src => src.TotalAmountWithTax))
                 .ForPath(dest => dest.TotalAmount.WithoutTax, opt => opt.MapFrom(src => src.TotalAmountWithoutTax))
@@ -114,6 +116,24 @@ namespace CATECEV.API.Mapper
 
             CreateMap<Models.AMPECO.resource.Tax.DisplayName, CATECEV.Models.Entity.AMPECO.Resources.Tax.TaxDisplayNameEntity>().ReverseMap();
             #endregion
+
+            #region Authorization
+            CreateMap<Models.AMPECO.resource.Authorization.Authorization,
+            CATECEV.Models.Entity.AMPECO.Resources.Authorization.AuthorizationEntity>()
+                .ForMember(dest => dest.AMPECOId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.AMPECOUserId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.AMPECOChargePointId, opt => opt.MapFrom(src => src.ChargePointId))
+                .ForMember(dest => dest.AMPECOEvseId, opt => opt.MapFrom(src => src.EvseId))
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+            CreateMap<CATECEV.Models.Entity.AMPECO.Resources.Authorization.AuthorizationEntity,
+            Models.AMPECO.resource.Authorization.Authorization>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.AMPECOId))
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.AMPECOUserId))
+                .ForMember(dest => dest.ChargePointId, opt => opt.MapFrom(src => src.AMPECOChargePointId))
+                .ForMember(dest => dest.EvseId, opt => opt.MapFrom(src => src.AMPECOEvseId));
+            #endregion
+
         }
     }
 }

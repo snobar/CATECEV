@@ -4,6 +4,7 @@ using CATECEV.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CATECEV.Data.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250315123758_AuthorizationTable2")]
+    partial class AuthorizationTable2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -70,6 +73,12 @@ namespace CATECEV.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AMPECOChargePointId");
+
+                    b.HasIndex("AMPECOEvseId");
+
+                    b.HasIndex("AMPECOUserId");
 
                     b.ToTable("Authorization", "Resources");
                 });
@@ -1106,6 +1115,31 @@ namespace CATECEV.Data.Migrations
                     b.ToTable("VehicleUser");
                 });
 
+            modelBuilder.Entity("CATECEV.Models.Entity.AMPECO.Resources.Authorization.AuthorizationEntity", b =>
+                {
+                    b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ChargePointEntity", "ChargePoint")
+                        .WithMany("Authorization")
+                        .HasForeignKey("AMPECOChargePointId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity", "Evse")
+                        .WithMany("Authorization")
+                        .HasForeignKey("AMPECOEvseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.User.User", "User")
+                        .WithMany("Authorization")
+                        .HasForeignKey("AMPECOUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChargePoint");
+
+                    b.Navigation("Evse");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ChargePointEntity", b =>
                 {
                     b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.User.User", "OwnerUser")
@@ -1322,6 +1356,8 @@ namespace CATECEV.Data.Migrations
 
             modelBuilder.Entity("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ChargePointEntity", b =>
                 {
+                    b.Navigation("Authorization");
+
                     b.Navigation("ChargingSessions");
 
                     b.Navigation("Evses");
@@ -1334,6 +1370,8 @@ namespace CATECEV.Data.Migrations
 
             modelBuilder.Entity("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.EvseEntity", b =>
                 {
+                    b.Navigation("Authorization");
+
                     b.Navigation("ChargingSessions");
 
                     b.Navigation("Connectors");
@@ -1361,6 +1399,8 @@ namespace CATECEV.Data.Migrations
 
             modelBuilder.Entity("CATECEV.Models.Entity.AMPECO.Resources.User.User", b =>
                 {
+                    b.Navigation("Authorization");
+
                     b.Navigation("ChargePoint");
 
                     b.Navigation("ChargingSessions");

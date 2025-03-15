@@ -1,4 +1,5 @@
-﻿using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
+﻿using CATECEV.Models.Entity.AMPECO.Resources.Authorization;
+using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
 using CATECEV.Models.Entity.AMPECO.Resources.Session;
 using CATECEV.Models.Entity.Base;
 

@@ -38,12 +38,20 @@ namespace CATECEV.API.Helper.Service
             {
                 _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "User")}";
             }
+            else if (typeof(T) == typeof(Models.AMPECO.resource.Authorization.Authorization))
+            {
+                _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Authorizations")}";
+            }
+            else if (typeof(T) == typeof(Models.AMPECO.resource.Location.Location))
+            {
+                _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Location")}";
+            }
 
             _token = Utility.GetAppsettingsValue("AccessToken");
             _httpClientService = httpClientService;
         }
 
-        public async Task<AMPECOResponseModel<IEnumerable<T>>> GetResourceData(int pageNumber, int pageSize = 100)
+        public async Task<AMPECOResponseModel<IEnumerable<T>>> GetResourceDataList(int pageNumber, int pageSize = 100)
         {
 
             var apiUrl = $"{_userApi}?page={pageNumber}&per_page={pageSize}";
@@ -61,6 +69,26 @@ namespace CATECEV.API.Helper.Service
             }
 
             return new AMPECOResponseModel<IEnumerable<T>>();
+        }
+
+        public async Task<AMPECOResponseModel<T>> GetResourceData(int AMPECOId)
+        {
+
+            var apiUrl = $"{_userApi}/{AMPECOId}";
+            var chargePointData = await _httpClientService.GetAsync<T>(apiUrl, _token);
+
+            if (chargePointData.IsNotNullOrEmpty() && chargePointData.Data.IsNotNullOrEmpty() && chargePointData.IsSuccess && chargePointData.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return new AMPECOResponseModel<T>
+                {
+                    Data = chargePointData.Data,
+                    TotalPages = chargePointData.TotalPages,
+                    TotalRecords = chargePointData.TotalRecords,
+                    CurrentPage = chargePointData.CurrentPage,
+                };
+            }
+
+            return new AMPECOResponseModel<T>();
         }
     }
 }

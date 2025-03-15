@@ -1,4 +1,5 @@
-﻿using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
+﻿using CATECEV.Models.Entity.AMPECO.Resources.Authorization;
+using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
 using CATECEV.Models.Entity.AMPECO.Resources.Tax;
 using CATECEV.Models.Entity.Base;
 
@@ -39,6 +40,7 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.Session
 
         public TaxEntity Tax { get; set; }
         #endregion
+        public int? AMPECOAuthorizationId { get; set; }
 
         public string Status { get; set; }
         public DateTime? StartedAt { get; set; }
@@ -52,7 +54,6 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.Session
         public string PaymentMethodId { get; set; }
         public int? TerminalId { get; set; }
         public string PaymentStatus { get; set; }
-        public int? AuthorizationId { get; set; }
         public string IdTag { get; set; }
         public string IdTagLabel { get; set; }
         public int? ExtendingSessionId { get; set; }

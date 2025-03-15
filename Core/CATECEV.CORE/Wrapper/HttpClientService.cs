@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using CATECEV.CORE.Extensions;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -35,14 +36,14 @@ public class HttpClientService : IHttpClientService
 
             var data = JsonSerializer.Deserialize<Data<T>>(content, _options);
 
-            return new ResponseModel<T> 
-            { 
+            return new ResponseModel<T>
+            {
                 Data = data.data,
                 IsSuccess = true,
                 StatusCode = response.StatusCode,
-                CurrentPage = data.Meta.current_page,
-                TotalRecords = data.Meta.Total,
-                TotalPages = data.Meta.last_page,
+                CurrentPage = data.Meta is not null ? data.Meta.current_page : 0,
+                TotalRecords = data.Meta is not null ? data.Meta.Total : 0,
+                TotalPages = data.Meta is not null ? data.Meta.last_page : 0,
             };
         }
         catch (Exception ex)

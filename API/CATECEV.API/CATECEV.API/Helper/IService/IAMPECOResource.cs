@@ -5,6 +5,7 @@ namespace CATECEV.API.Helper.IService
 {
     public interface IAMPECOResource<T>
     {
-        Task<AMPECOResponseModel<IEnumerable<T>>> GetResourceData(int pageNumber, int pageSize = 100);
+        Task<AMPECOResponseModel<T>> GetResourceData(int AMPECOId);
+        Task<AMPECOResponseModel<IEnumerable<T>>> GetResourceDataList(int pageNumber, int pageSize = 100);
     }
 }
