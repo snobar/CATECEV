@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using CATECEV.API.EntityHelper.IService;
 using CATECEV.API.Helper.IService;
 using CATECEV.API.Models.Reports.Sessions;
 using CATECEV.CORE.Extensions;
