@@ -7,7 +7,7 @@ namespace CATECEV.API.Helper.Service
 {
     public class AMPECOResource<T> : IAMPECOResource<T> where T : class
     {
-        private string _userApi;
+        private string _ampecoBaseUrl;
         private string _token;
 
         private readonly IHttpClientService _httpClientService;
@@ -16,50 +16,50 @@ namespace CATECEV.API.Helper.Service
         {
             if (typeof(T) == typeof(Models.AMPECO.resource.users.UserGroup))
             {
-                _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "UserGroup")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "UserGroup")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.ChargePoint.ChargePoint))
             {
-                _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "ChargePoints")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "ChargePoints")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.ChargePoint.Evse))
             {
-                _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Evses")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Evses")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.Session.ChargingSession))
             {
-                _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Sessions")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Sessions")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.Tax.Tax))
             {
-                _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Taxes")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Taxes")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.users.User))
             {
-                _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "User")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "User")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.Authorization.Authorization))
             {
-                _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Authorizations")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Authorizations")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.Location.Location))
             {
-                _userApi = $"{Utility.GetAppsettingsValue("AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Location")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Location")}";
             }
 
-            _token = Utility.GetAppsettingsValue("AccessToken");
+            _token = Utility.GetAppsettingsValue("AMPECOConfiguration", "AccessToken");
             _httpClientService = httpClientService;
         }
 
-        public async Task<AMPECOResponseModel<IEnumerable<T>>> GetResourceDataList(int pageNumber, int pageSize = 100)
+        public async Task<Models.ResponseModel<IEnumerable<T>>> GetResourceDataList(int pageNumber, int pageSize = 100)
         {
 
-            var apiUrl = $"{_userApi}?page={pageNumber}&per_page={pageSize}";
+            var apiUrl = $"{_ampecoBaseUrl}?page={pageNumber}&per_page={pageSize}";
             var chargePointData = await _httpClientService.GetAsync<IEnumerable<T>>(apiUrl, _token);
 
             if (chargePointData.IsNotNullOrEmpty() && chargePointData.Data.IsNotNullOrEmpty() && chargePointData.IsSuccess && chargePointData.StatusCode == System.Net.HttpStatusCode.OK)
             {
-                return new AMPECOResponseModel<IEnumerable<T>>
+                return new Models.ResponseModel<IEnumerable<T>>
                 {
                     Data = chargePointData.Data,
                     TotalPages = chargePointData.TotalPages,
@@ -68,18 +68,18 @@ namespace CATECEV.API.Helper.Service
                 };
             }
 
-            return new AMPECOResponseModel<IEnumerable<T>>();
+            return new Models.ResponseModel<IEnumerable<T>>();
         }
 
-        public async Task<AMPECOResponseModel<T>> GetResourceData(int AMPECOId)
+        public async Task<Models.ResponseModel<T>> GetResourceData(int AMPECOId)
         {
 
-            var apiUrl = $"{_userApi}/{AMPECOId}";
+            var apiUrl = $"{_ampecoBaseUrl}/{AMPECOId}";
             var chargePointData = await _httpClientService.GetAsync<T>(apiUrl, _token);
 
             if (chargePointData.IsNotNullOrEmpty() && chargePointData.Data.IsNotNullOrEmpty() && chargePointData.IsSuccess && chargePointData.StatusCode == System.Net.HttpStatusCode.OK)
             {
-                return new AMPECOResponseModel<T>
+                return new Models.ResponseModel<T>
                 {
                     Data = chargePointData.Data,
                     TotalPages = chargePointData.TotalPages,
@@ -88,7 +88,7 @@ namespace CATECEV.API.Helper.Service
                 };
             }
 
-            return new AMPECOResponseModel<T>();
+            return new Models.ResponseModel<T>();
         }
     }
 }

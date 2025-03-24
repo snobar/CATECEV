@@ -24,6 +24,8 @@ builder.Services.AddScoped<IChargePoint, ChargePoint>();
 builder.Services.AddScoped<IEvse, Evse>();
 builder.Services.AddScoped(typeof(IAMPECOResource<>), typeof(AMPECOResource<>));
 
+builder.Services.AddScoped<IZuper, Zuper>();
+
 
 builder.Services.AddSwaggerGen(c =>
 {

@@ -1,6 +1,6 @@
 ﻿namespace CATECEV.API.Models
 {
-    public class AMPECOResponseModel<T>
+    public class ResponseModel<T>
     {
         public T Data { get; set; }
         public int CurrentPage { get; set; }

@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\..\Models\CATECEV.Models\CATECEV.Models.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\Zuper\Timesheet\" />
+  </ItemGroup>
+
 </Project>

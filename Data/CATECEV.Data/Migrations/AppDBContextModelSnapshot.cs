@@ -885,7 +885,7 @@ namespace CATECEV.Data.Migrations
 
                     b.HasIndex("CountryId");
 
-                    b.ToTable("City");
+                    b.ToTable("City", (string)null);
                 });
 
             modelBuilder.Entity("CATECEV.Models.Entity.Company", b =>
@@ -926,7 +926,7 @@ namespace CATECEV.Data.Migrations
 
                     b.HasIndex("CountryId");
 
-                    b.ToTable("Company");
+                    b.ToTable("Company", (string)null);
                 });
 
             modelBuilder.Entity("CATECEV.Models.Entity.Country", b =>
@@ -948,7 +948,7 @@ namespace CATECEV.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Country");
+                    b.ToTable("Country", (string)null);
                 });
 
             modelBuilder.Entity("CATECEV.Models.Entity.Shared.LookupCategory", b =>
@@ -1051,7 +1051,7 @@ namespace CATECEV.Data.Migrations
 
                     b.HasIndex("TypeId");
 
-                    b.ToTable("Vehicle");
+                    b.ToTable("Vehicle", (string)null);
                 });
 
             modelBuilder.Entity("CATECEV.Models.Entity.VehicleType", b =>
@@ -1073,7 +1073,7 @@ namespace CATECEV.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("VehicleType");
+                    b.ToTable("VehicleType", (string)null);
                 });
 
             modelBuilder.Entity("CATECEV.Models.Entity.VehicleUser", b =>
@@ -1103,7 +1103,7 @@ namespace CATECEV.Data.Migrations
 
                     b.HasIndex("VehicleId");
 
-                    b.ToTable("VehicleUser");
+                    b.ToTable("VehicleUser", (string)null);
                 });
 
             modelBuilder.Entity("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ChargePointEntity", b =>

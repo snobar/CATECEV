@@ -1,6 +1,7 @@
 ﻿using CATECEV.CORE.Extensions;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json;
 
@@ -22,13 +23,13 @@ public class HttpClientService : IHttpClientService
         };
     }
 
-    public async Task<ResponseModel<T>> GetAsync<T>(string uri, string token = null)
+    public async Task<ResponseModel<T>> GetAsync<T>(string uri, string token = null, Dictionary<string, string> apiHeader = null)
     {
         var response = new HttpResponseMessage();
         try
         {
             var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            AddAuthorizationHeader(request, token);
+            AddAuthorizationHeader(request, token, apiHeader);
 
             response = await _httpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
@@ -42,7 +43,7 @@ public class HttpClientService : IHttpClientService
                 IsSuccess = true,
                 StatusCode = response.StatusCode,
                 CurrentPage = data.Meta is not null ? data.Meta.current_page : 0,
-                TotalRecords = data.Meta is not null ? data.Meta.Total : 0,
+                TotalRecords = data.Meta is not null ? data.Meta.Total : data.total_records,
                 TotalPages = data.Meta is not null ? data.Meta.last_page : 0,
             };
         }
@@ -59,21 +60,45 @@ public class HttpClientService : IHttpClientService
 
     }
 
-    public async Task<T> PostAsync<T>(string uri, object data, string token = null)
+    public async Task<ResponseModel<T>> PostAsync<T>(string uri, object data, string token = null, Dictionary<string, string> apiHeader = null)
     {
-        var json = JsonSerializer.Serialize(data);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        var response = new HttpResponseMessage();
+        try
         {
-            Content = content
-        };
-        AddAuthorizationHeader(request, token);
+            var json = JsonSerializer.Serialize(data);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-        var responseContent = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<T>(responseContent, _options);
+            var request = new HttpRequestMessage(HttpMethod.Post, uri)
+            {
+                Content = content
+            };
+            AddAuthorizationHeader(request, token, apiHeader);
+
+            response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var returnedData = JsonSerializer.Deserialize<Data<T>>(responseContent, _options);
+
+            return new ResponseModel<T>
+            {
+                Data = returnedData.data,
+                IsSuccess = true,
+                StatusCode = response.StatusCode,
+                CurrentPage = returnedData.Meta is not null ? returnedData.Meta.current_page : 0,
+                TotalRecords = returnedData.Meta is not null ? returnedData.Meta.Total : 0,
+                TotalPages = returnedData.Meta is not null ? returnedData.Meta.last_page : 0,
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ResponseModel<T>
+            {
+                IsSuccess = false,
+                Message = $"HttpClientService Exception Message: {ex.Message} \n HttpClientService Exception InnerException: {ex.InnerException}",
+                ShowMessage = false,
+                StatusCode = response.StatusCode
+            };
+        }
     }
 
     public async Task<T> PutAsync<T>(string uri, object data, string token = null)
@@ -119,9 +144,16 @@ public class HttpClientService : IHttpClientService
         return JsonSerializer.Deserialize<T>(responseContent, _options);
     }
 
-    private void AddAuthorizationHeader(HttpRequestMessage request, string token)
+    private void AddAuthorizationHeader(HttpRequestMessage request, string token, Dictionary<string, string> apiHeader = null)
     {
-        if (!string.IsNullOrEmpty(token))
+        if (token.IsNotNullOrEmpty() && apiHeader.IsNotNullOrEmpty())
+        {
+            foreach (var header in apiHeader)
+            {
+                request.Headers.Add(header.Key, header.Value);
+            }
+        }
+        else if (token.IsNotNullOrEmpty() && !apiHeader.IsNotNullOrEmpty())
         {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
@@ -130,8 +162,8 @@ public class HttpClientService : IHttpClientService
 
 public interface IHttpClientService
 {
-    Task<ResponseModel<T>> GetAsync<T>(string uri, string token = null);
-    Task<T> PostAsync<T>(string uri, object data, string token = null);
+    Task<ResponseModel<T>> GetAsync<T>(string uri, string token = null, Dictionary<string, string> apiHeader = null);
+    Task<ResponseModel<T>> PostAsync<T>(string uri, object data, string token = null, Dictionary<string, string> apiHeader = null);
     Task<T> PutAsync<T>(string uri, object data, string token = null);
     Task DeleteAsync(string uri, string token = null);
     Task<T> PatchAsync<T>(string uri, object data, string token = null);
@@ -154,6 +186,7 @@ public class Data<T>
     public T data { get; set; }
     public Links Links { get; set; }
     public Meta Meta { get; set; }
+    public int total_records { get; set; }
 }
 
 public class Links
