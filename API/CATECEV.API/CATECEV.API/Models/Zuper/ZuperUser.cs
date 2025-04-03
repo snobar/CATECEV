@@ -2,7 +2,7 @@
 
 namespace CATECEV.API.Models.Zuper
 {
-    public class CreatedBy
+    public class ZuperUser
     {
         [JsonPropertyName("user_uid")]
         public string UserUid { get; set; }
@@ -54,5 +54,16 @@ namespace CATECEV.API.Models.Zuper
 
         [JsonPropertyName("updated_at")]
         public DateTime UpdatedAt { get; set; }
+
+        public ZuperUserRoles role { get; set; }
+
+        public object access_role { get; set; }
+    }
+
+    public class ZuperUserRoles
+    {
+        public string role_uid { get; set; }
+        public string role_name { get; set; }
+        public string role_key { get; set; }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using CATECEV.API.Helper.IService;
+using CATECEV.API.Models.Zuper;
 using CATECEV.API.Models.Zuper.Teams;
+using CATECEV.API.Models.Zuper.Timesheet;
 using CATECEV.CORE.Extensions;
 using CATECEV.CORE.Framework;
-using System;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CATECEV.API.Helper.Service
 {
@@ -39,45 +41,58 @@ namespace CATECEV.API.Helper.Service
             return new Models.ResponseModel<IEnumerable<ZuperTeam>>();
         }
 
-        public async Task<int> GetTimesheet()
+        public async Task<ZuperResponse<ZuperTimesheetData>> GetTimesheet(int count,string date,string to_date)
         {
             Dictionary<string, string> headersMap = new Dictionary<string, string> { { "x-api-key", _token }, { "accept", "application/json" } };
 
-            DateTime currentDate = DateTime.Now;
-            DateTime FirstDate = new DateTime(currentDate.Year, currentDate.Month, currentDate.Day, 9, 0, 0);
+            string timesheetAPIURL = $"{_zuperBaseUrl}/timesheets?count={count}&date={date}&page=1&to_date={to_date}";
 
-            DateTime desiredDate = DateTime.Now.AddDays(14);
-            DateTime SecondDate = new DateTime(desiredDate.Year, desiredDate.Month, desiredDate.Day, 18, 0, 0);
+            var timesheetData = await _httpClientService.GetAsync2<ZuperResponse<ZuperTimesheetData>>(timesheetAPIURL, _token, headersMap);
 
-            // Set up API URL
-            string fromDateTime = FirstDate.ToString("yyyy-MM-dd HH:mm:ss");
-            string toDateTime = SecondDate.ToString("yyyy-MM-dd HH:mm:ss");
-            string userUid = Utility.GetAppsettingsValue("ZuperConfiguration", "UsersIds");
-            string jobDuration = Utility.GetAppsettingsValue("ZuperConfiguration", "JobDuration");
-            string user_type = Utility.GetAppsettingsValue("ZuperConfiguration", "UserType");
-            string timesheetAPIURL = $"{_zuperBaseUrl}/timesheets?date={fromDateTime}&to_date={toDateTime}";
-
-            var timesheetData = await _httpClientService.GetAsync<int>("https://app.zuperpro.com/api/timesheets", _token, headersMap);
-
-            var client = new HttpClient();
-            var request = new HttpRequestMessage
+            if (timesheetData.IsNotNullOrEmpty() && timesheetData.status == "success" && timesheetData.data.IsNotNullOrEmpty())
             {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri("https://app.zuperpro.com/api/timesheets?page=1&limit=10&sort=ASC&sort_by=checked_time&date=2025-03-01&to_date=2025-03-24"),
-                Headers =
-    {
-        { "accept", "application/json" },
-        { "x-api-key", "a6d316cb51e39dbf84366251b8fcedad" },
-    },
-            };
-            using (var response = await client.SendAsync(request))
-            {
-                response.EnsureSuccessStatusCode();
-                var body = await response.Content.ReadAsStringAsync();
-                Console.WriteLine(body);
+                while (timesheetData.data.total_records > count)
+                {
+                    count = count * 2;
+                    timesheetAPIURL = $"{_zuperBaseUrl}/timesheets?count={count}&date={date}&page=1&to_date={to_date}";
+
+                    timesheetData = await _httpClientService.GetAsync2<ZuperResponse<ZuperTimesheetData>>(timesheetAPIURL, _token, headersMap);
+
+                    if (timesheetData.IsNotNullOrEmpty() && timesheetData.status == "success" && timesheetData.data.IsNotNullOrEmpty() && timesheetData.data.total_records <= count)
+                    {
+                        return timesheetData;
+                    }
+                }
             }
 
-            return 0;
+            return timesheetData;
+        }
+
+        public async Task<ZuperResponse<List<TimeoffRequestType>>> GetTimeoffRequestType()
+        {
+            Dictionary<string, string> headersMap = new Dictionary<string, string> { { "x-api-key", _token }, { "accept", "application/json" } };
+
+            string timeoffRequestTypeAPIURL = $"{_zuperBaseUrl}/timesheet/request/timeoff_type";
+
+            var timesheetData = await _httpClientService.GetAsync2<ZuperResponse<List<TimeoffRequestType>>>(timeoffRequestTypeAPIURL, _token, headersMap);
+
+            if (timesheetData.IsNotNullOrEmpty() && timesheetData.data.IsNotNullOrEmpty())
+            {
+                timesheetData.total_records = timesheetData.data.Count();
+            }
+
+            return timesheetData;
+        }
+
+        public async Task<ZuperResponse<List<ZuperUser>>> GetZuperUsers()
+        {
+            Dictionary<string, string> headersMap = new Dictionary<string, string> { { "x-api-key", _token }, { "accept", "application/json" } };
+
+            string timeoffRequestTypeAPIURL = $"{_zuperBaseUrl}/user/all";
+
+            var usersData = await _httpClientService.GetAsync2<ZuperResponse<List<ZuperUser>>>(timeoffRequestTypeAPIURL, _token, headersMap);
+
+            return usersData;
         }
     }
 }

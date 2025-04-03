@@ -1,4 +1,5 @@
 ﻿using CATECEV.CORE.Extensions;
+using CATECEV.CORE.Logger;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Reflection.PortableExecutable;
@@ -49,6 +50,8 @@ public class HttpClientService : IHttpClientService
         }
         catch (Exception ex)
         {
+            FileLogger.WriteLog($"GetAsync: {uri}\nMessage: {ex.Message}\n InnerException: {ex.InnerException}");
+
             return new ResponseModel<T>
             {
                 IsSuccess = false,
@@ -56,6 +59,29 @@ public class HttpClientService : IHttpClientService
                 ShowMessage = false,
                 StatusCode = response.StatusCode
             };
+        }
+
+    }
+
+    public async Task<T> GetAsync2<T>(string uri, string token = null, Dictionary<string, string> apiHeader = null)
+    {
+        var response = new HttpResponseMessage();
+        try
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            AddAuthorizationHeader(request, token, apiHeader);
+
+            response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
+
+            var data = JsonSerializer.Deserialize<T>(content, _options);
+
+            return data;
+        }
+        catch (Exception ex)
+        {
+            return default;
         }
 
     }
@@ -163,6 +189,7 @@ public class HttpClientService : IHttpClientService
 public interface IHttpClientService
 {
     Task<ResponseModel<T>> GetAsync<T>(string uri, string token = null, Dictionary<string, string> apiHeader = null);
+    Task<T> GetAsync2<T>(string uri, string token = null, Dictionary<string, string> apiHeader = null);
     Task<ResponseModel<T>> PostAsync<T>(string uri, object data, string token = null, Dictionary<string, string> apiHeader = null);
     Task<T> PutAsync<T>(string uri, object data, string token = null);
     Task DeleteAsync(string uri, string token = null);

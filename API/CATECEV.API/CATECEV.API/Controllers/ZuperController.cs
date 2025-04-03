@@ -1,8 +1,12 @@
 ﻿using AutoMapper;
 using CATECEV.API.Helper.IService;
+using CATECEV.API.Models.Zuper.Filter;
+using CATECEV.CORE.Extensions;
+using CATECEV.CORE.Framework;
 using CATECEV.CORE.Logger;
 using CATECEV.Data.Context;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
 namespace CATECEV.API.Controllers
 {
@@ -37,13 +41,77 @@ namespace CATECEV.API.Controllers
             }
         }
 
-        [HttpGet("MapTimesheetData")]
-        public async Task<IActionResult> MapData()
+        [HttpPost("MapTimesheetData")]
+        public async Task<IActionResult> MapData(TimesheetFilter filterModel)
         {
 
-            var sss = await _zuper.GetTimesheet();
+            if (ModelState.IsValid)
+            {
 
-            return Ok();
+                string[] validFormats = new[]
+                {
+                    "yyyy-MM-dd HH:mm:ss.fff",
+                    "yyyy-MM-dd HH:mm:ss",
+                    "yyyy-MM-ddTHH:mm:ss.fff",
+                    "yyyy-MM-ddTHH:mm:ss",
+                    "MM/dd/yyyy HH:mm:ss",
+                    "MM/dd/yyyy",
+                    "dd-MM-yyyy",
+                    "dd/MM/yyyy",
+                    "dd.MM.yyyy HH:mm:ss",
+                    "dd.MM.yyyy"
+                };
+
+                var count = filterModel.Count ?? Utility.GetAppsettingsValue("ZuperConfiguration", "TimesheetCount").ToAnyType<int>();
+
+                if (DateTime.TryParseExact(filterModel.FromDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var fromDate))
+                {
+                    filterModel.FromDate = fromDate.ToString("yyyy-MM-dd");
+                }
+
+                if (DateTime.TryParseExact(filterModel.ToDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var toDate))
+                {
+                    filterModel.ToDate = toDate.ToString("yyyy-MM-dd");
+                }
+
+                var zuperTimesheet = await _zuper.GetTimesheet(count, filterModel.FromDate, filterModel.ToDate);
+
+                return Ok(zuperTimesheet);
+            }
+
+            return StatusCode(400, false);
+        }
+
+        [HttpGet("GetTimeoffRequestType")]
+        public async Task<IActionResult> GetTimeoffRequestType()
+        {
+            try
+            {
+                var timeoffRequestType = await _zuper.GetTimeoffRequestType();
+
+                return Ok(timeoffRequestType);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLog($"GetTimeoffRequestType Message: {ex.Message}\n InnerException: {ex.InnerException}");
+                return StatusCode(500, false);
+            }
+        }
+
+        [HttpGet("GetZuperUsers")]
+        public async Task<IActionResult> GetZuperUsers()
+        {
+            try
+            {
+                var users = await _zuper.GetZuperUsers();
+
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLog($"GetZuperUsers Message: {ex.Message}\n InnerException: {ex.InnerException}");
+                return StatusCode(500, false);
+            }
         }
     }
 }

@@ -7,5 +7,6 @@ namespace CATECEV.API.Helper.IService
     {
         Task<Models.ResponseModel<T>> GetResourceData(int AMPECOId);
         Task<Models.ResponseModel<IEnumerable<T>>> GetResourceDataList(int pageNumber, int pageSize = 100);
+        Task<IEnumerable<T>> GetFullResourcesData();
     }
 }

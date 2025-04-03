@@ -3,7 +3,7 @@ namespace CATECEV.API.Models.Reports.Sessions
 {
     public class ChargingSessionViewModel
     {
-        public int ID { get; set; }
+        public string ID { get; set; }
         public string User { get; set; }
         public int UserID { get; set; }
         public string Email { get; set; }
@@ -24,6 +24,7 @@ namespace CATECEV.API.Models.Reports.Sessions
         public string StopReason { get; set; }
         public string EVSEType { get; set; }
         public string ChargePointName { get; set; }
+        public int ChargePointId { get; set; }
         public int LocationId { get; set; }
         public string City { get; set; }
         public string PostCode { get; set; }
@@ -34,5 +35,8 @@ namespace CATECEV.API.Models.Reports.Sessions
         public string RoamingCPO { get; set; }
         public string Location { get; set; }
         public string Country { get; set; }
+        public int? OwnerPartnerId { get; set; }
+        public string PartnerName { get; set; }
+        public int AuthorizationId { get; set; }
     }
 }

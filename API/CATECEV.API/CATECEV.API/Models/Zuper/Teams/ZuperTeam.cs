@@ -32,6 +32,6 @@ namespace CATECEV.API.Models.Zuper.Teams
         public DateTime UpdatedAt { get; set; }
 
         [JsonPropertyName("created_by")]
-        public CreatedBy CreatedBy { get; set; }
+        public ZuperUser CreatedBy { get; set; }
     }
 }

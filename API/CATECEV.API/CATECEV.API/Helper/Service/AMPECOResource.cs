@@ -2,6 +2,7 @@
 using CATECEV.API.Models;
 using CATECEV.CORE.Extensions;
 using CATECEV.CORE.Framework;
+using System.Collections.Concurrent;
 
 namespace CATECEV.API.Helper.Service
 {
@@ -14,25 +15,27 @@ namespace CATECEV.API.Helper.Service
 
         public AMPECOResource(IHttpClientService httpClientService)
         {
+            var sss = typeof(T).Name;
+
             if (typeof(T) == typeof(Models.AMPECO.resource.users.UserGroup))
             {
                 _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "UserGroup")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.ChargePoint.ChargePoint))
             {
-                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "ChargePoints")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "ChargePoint")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.ChargePoint.Evse))
             {
-                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Evses")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Evse")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.Session.ChargingSession))
             {
-                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Sessions")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "ChargingSession")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.Tax.Tax))
             {
-                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Taxes")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Tax")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.users.User))
             {
@@ -40,11 +43,15 @@ namespace CATECEV.API.Helper.Service
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.Authorization.Authorization))
             {
-                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Authorizations")}";
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Authorization")}";
             }
             else if (typeof(T) == typeof(Models.AMPECO.resource.Location.Location))
             {
                 _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "Location")}";
+            }
+            else if (typeof(T) == typeof(Models.AMPECO.resource.Partner.AMPECOPartner))
+            {
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "AMPECOPartner")}";
             }
 
             _token = Utility.GetAppsettingsValue("AMPECOConfiguration", "AccessToken");
@@ -89,6 +96,41 @@ namespace CATECEV.API.Helper.Service
             }
 
             return new Models.ResponseModel<T>();
+        }
+
+        public async Task<IEnumerable<T>> GetFullResourcesData()
+        {
+            var pageNumber = 1;
+
+            var resourceData = await GetResourceDataList(pageNumber);
+            if (resourceData is null || !resourceData.Data.IsNotNullOrEmpty() || resourceData.TotalRecords <= 0)
+                return new List<T>();
+
+            var totalPages = resourceData.TotalPages;
+            var batchSize = 30;
+            var resourceDataList = new ConcurrentBag<T>();
+
+            var dateTime = DateTime.Now;
+
+            for (var i = 1; i <= totalPages; i += batchSize)
+            {
+                var tasks = Enumerable.Range(i, Math.Min(batchSize, totalPages - i + 1))
+                    .Select(async page =>
+                    {
+                        var pageData = await GetResourceDataList(page);
+                        if (pageData != null && pageData.Data.IsNotNullOrEmpty())
+                        {
+                            foreach (var item in pageData.Data)
+                            {
+                                resourceDataList.Add(item);
+                            }
+                        }
+                    });
+
+                await Task.WhenAll(tasks);
+            }
+
+            return resourceDataList;
         }
     }
 }
