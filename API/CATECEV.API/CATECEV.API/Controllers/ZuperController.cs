@@ -41,8 +41,8 @@ namespace CATECEV.API.Controllers
             }
         }
 
-        [HttpPost("MapTimesheetData")]
-        public async Task<IActionResult> MapData(TimesheetFilter filterModel)
+        [HttpGet("MapTimesheetData")]
+        public async Task<IActionResult> MapData(int? Count, string FromDate, string ToDate)
         {
 
             if (ModelState.IsValid)
@@ -62,19 +62,24 @@ namespace CATECEV.API.Controllers
                     "dd.MM.yyyy"
                 };
 
-                var count = filterModel.Count ?? Utility.GetAppsettingsValue("ZuperConfiguration", "TimesheetCount").ToAnyType<int>();
+                var count = Count ?? Utility.GetAppsettingsValue("ZuperConfiguration", "TimesheetCount").ToAnyType<int>();
 
-                if (DateTime.TryParseExact(filterModel.FromDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var fromDate))
+                if (DateTime.TryParseExact(FromDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var fromDate))
                 {
-                    filterModel.FromDate = fromDate.ToString("yyyy-MM-dd");
+                    FromDate = fromDate.ToString("yyyy-MM-dd");
                 }
 
-                if (DateTime.TryParseExact(filterModel.ToDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var toDate))
+                if (DateTime.TryParseExact(ToDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var toDate))
                 {
-                    filterModel.ToDate = toDate.ToString("yyyy-MM-dd");
+                    ToDate = toDate.ToString("yyyy-MM-dd");
                 }
 
-                var zuperTimesheet = await _zuper.GetTimesheet(count, filterModel.FromDate, filterModel.ToDate);
+                var zuperTimesheet = await _zuper.GetTimesheet(count, FromDate, ToDate);
+
+                if (zuperTimesheet.status == "success" && zuperTimesheet.data.IsNotNullOrEmpty() && zuperTimesheet.data.total_records > 0 && zuperTimesheet.data.timesheets.IsNotNullOrEmpty())
+                {
+                    return Ok(zuperTimesheet.data.timesheets);
+                }
 
                 return Ok(zuperTimesheet);
             }

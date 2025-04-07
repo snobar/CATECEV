@@ -58,10 +58,20 @@ namespace CATECEV.API.Helper.Service
             _httpClientService = httpClientService;
         }
 
-        public async Task<Models.ResponseModel<IEnumerable<T>>> GetResourceDataList(int pageNumber, int pageSize = 100)
+        public async Task<Models.ResponseModel<IEnumerable<T>>> GetResourceDataList(int pageNumber, int pageSize = 100, string _fromDate = "", string _toDate = "")
         {
 
             var apiUrl = $"{_ampecoBaseUrl}?page={pageNumber}&per_page={pageSize}";
+
+            if (typeof(T) == typeof(Models.AMPECO.resource.Session.ChargingSession) && _fromDate.IsNotNullOrEmpty() && _toDate.IsNotNullOrEmpty())
+            {
+                apiUrl += $"&filter[startedAfter]={Uri.EscapeDataString(_fromDate)}&filter[startedBefore]={Uri.EscapeDataString(_toDate)}";
+            }
+            else if (typeof(T) == typeof(Models.AMPECO.resource.Authorization.Authorization) && _fromDate.IsNotNullOrEmpty() && _toDate.IsNotNullOrEmpty())
+            {
+                apiUrl += $"&filter[lastUpdatedAfter]={Uri.EscapeDataString(_fromDate)}&filter[lastUpdatedBefore]={Uri.EscapeDataString(_toDate)}";
+            }
+
             var chargePointData = await _httpClientService.GetAsync<IEnumerable<T>>(apiUrl, _token);
 
             if (chargePointData.IsNotNullOrEmpty() && chargePointData.Data.IsNotNullOrEmpty() && chargePointData.IsSuccess && chargePointData.StatusCode == System.Net.HttpStatusCode.OK)
@@ -98,11 +108,11 @@ namespace CATECEV.API.Helper.Service
             return new Models.ResponseModel<T>();
         }
 
-        public async Task<IEnumerable<T>> GetFullResourcesData()
+        public async Task<IEnumerable<T>> GetFullResourcesData(string fromDate = "", string toDate = "")
         {
             var pageNumber = 1;
 
-            var resourceData = await GetResourceDataList(pageNumber);
+            var resourceData = await GetResourceDataList(pageNumber, _fromDate: fromDate, _toDate: toDate);
             if (resourceData is null || !resourceData.Data.IsNotNullOrEmpty() || resourceData.TotalRecords <= 0)
                 return new List<T>();
 
@@ -117,7 +127,7 @@ namespace CATECEV.API.Helper.Service
                 var tasks = Enumerable.Range(i, Math.Min(batchSize, totalPages - i + 1))
                     .Select(async page =>
                     {
-                        var pageData = await GetResourceDataList(page);
+                        var pageData = await GetResourceDataList(page, _fromDate: fromDate, _toDate: toDate);
                         if (pageData != null && pageData.Data.IsNotNullOrEmpty())
                         {
                             foreach (var item in pageData.Data)

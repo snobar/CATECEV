@@ -1,9 +1,15 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 namespace CATECEV.CORE.Extensions
 {
     public static class ObjectExtensions
     {
+        public static bool IsNotNullOrEmpty([NotNullWhen(true)] this string value)
+        {
+            return !string.IsNullOrWhiteSpace(value);
+        }
+
         public static bool IsNotNullOrEmpty<T>(this T? value) where T : struct
         {
             return value.HasValue;

@@ -5,6 +5,7 @@ using CATECEV.CORE.Extensions;
 using CATECEV.CORE.Logger;
 using CATECEV.Data.Context;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace CATECEV.API.Controllers
@@ -43,13 +44,30 @@ namespace CATECEV.API.Controllers
         }
 
         [HttpGet("SessionsRawData")]
-        public async Task<IActionResult> SessionsRawData()
+        public async Task<IActionResult> SessionsRawData(int partnerId, string fromDate, string toDate)
         {
             try
             {
+                string[] validFormats = new[]
+{
+                    "yyyy-MM-dd"
+                };
+
+
+                if (DateTime.TryParseExact(fromDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var _fromDate))
+                {
+                    fromDate = _fromDate.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                }
+
+                if (DateTime.TryParseExact(toDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var _toDate))
+                {
+                    _toDate = _toDate.Date.AddDays(1).AddMilliseconds(-1);
+                    toDate = _toDate.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                }
+
                 var startTime = DateTime.Now;
 
-                var sessions = (await _aMPECOSessions.GetFullResourcesData()).DistinctBy(x => x.Id).ToList();
+                var sessions = (await _aMPECOSessions.GetFullResourcesData(_fromDate: fromDate, _toDate: toDate)).DistinctBy(x => x.Id).ToList();
                 var users = (await _user.GetFullResourcesData()).DistinctBy(x => x.Id).ToList();
                 var chargePoints = (await _aMPECOChargePoints.GetFullResourcesData()).DistinctBy(x => x.Id).ToList();
                 var evses = (await _aMPECOEvses.GetFullResourcesData()).DistinctBy(x => x.Id).ToList();
@@ -66,7 +84,7 @@ namespace CATECEV.API.Controllers
                     .Where(a =>
                     (a.PaymentStatus == "partially" || a.PaymentStatus == "paid")
                     && a.Status == "finished"
-                    && a.StartedAt.HasValue && a.StartedAt.Value.Date >= new DateTime(2025, 2, 1) && a.StartedAt.Value.Date <= new DateTime(2025, 2, 28))
+                    && a.StartedAt.HasValue && a.StartedAt.Value.Date >= _fromDate.Date && a.StartedAt.Value.Date <= _toDate.Date)
                     .Select(a => new ChargingSessionViewModel
                     {
                         ID = a.Id,
@@ -173,7 +191,7 @@ namespace CATECEV.API.Controllers
                     }
                 }
 
-                SessionsRawData = SessionsRawData.Where(x => x.OwnerPartnerId == 16).ToList();
+                SessionsRawData = SessionsRawData.Where(x => x.OwnerPartnerId == partnerId).ToList();
 
                 #region MyRegion
                 //var result = from a in sessions
