@@ -117,7 +117,7 @@ namespace CATECEV.API.Helper.Service
                 return new List<T>();
 
             var totalPages = resourceData.TotalPages;
-            var batchSize = 30;
+            var batchSize = 20;
             var resourceDataList = new ConcurrentBag<T>();
 
             var dateTime = DateTime.Now;

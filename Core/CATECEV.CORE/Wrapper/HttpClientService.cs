@@ -81,6 +81,8 @@ public class HttpClientService : IHttpClientService
         }
         catch (Exception ex)
         {
+            FileLogger.WriteLog($"GetAsync: {uri}\nMessage: {ex.Message}\n InnerException: {ex.InnerException}");
+
             return default;
         }
 

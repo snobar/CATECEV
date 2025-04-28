@@ -2,6 +2,7 @@
 using CATECEV.API.Helper.IService;
 using CATECEV.API.Models.Reports.Sessions;
 using CATECEV.CORE.Extensions;
+using CATECEV.CORE.Framework;
 using CATECEV.CORE.Logger;
 using CATECEV.Data.Context;
 using Microsoft.AspNetCore.Mvc;
@@ -54,24 +55,66 @@ namespace CATECEV.API.Controllers
                 };
 
 
+                var tempFromData = DateTime.Now;
+                var tempToDate = DateTime.Now;
+
                 if (DateTime.TryParseExact(fromDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var _fromDate))
                 {
+                    tempFromData = _fromDate;
+                    //_fromDate = _fromDate.AddHours(Utility.GetAppsettingsValue("AMPECOConfiguration", "TimeDiffAdd").ToAnyType<int>());
                     fromDate = _fromDate.ToString("yyyy-MM-dd HH:mm:ss.fff");
                 }
 
                 if (DateTime.TryParseExact(toDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var _toDate))
                 {
+                    tempToDate = _toDate;
                     _toDate = _toDate.Date.AddDays(1).AddMilliseconds(-1);
+                    //_toDate = _toDate.AddHours(Utility.GetAppsettingsValue("AMPECOConfiguration", "TimeDiffAdd").ToAnyType<int>());
                     toDate = _toDate.ToString("yyyy-MM-dd HH:mm:ss.fff");
                 }
+
+                //var tempFromData = fromDate;
+                //var tempToDate = toDate;
+
+                //if (DateTime.TryParse(tempFromData, out var _tempFromDate))
+                //{
+                //    _tempFromDate = _tempFromDate.Date.AddDays(-1);
+                //    tempFromData = _fromDate.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                //}
+
+                //if (DateTime.TryParse(tempToDate, out var _tempToDate))
+                //{
+                //    _tempToDate = _tempToDate.Date.AddDays(2).AddMilliseconds(-1);
+                //    tempToDate = _tempToDate.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                //}
 
                 var startTime = DateTime.Now;
 
                 var sessions = (await _aMPECOSessions.GetFullResourcesData(_fromDate: fromDate, _toDate: toDate)).DistinctBy(x => x.Id).ToList();
+
+                //sessions.Where(x => x.StartedAt.HasValue && x.StoppedAt.HasValue).ToList().ForEach(x =>
+                //{
+                //    x.StartedAt = x.StartedAt.Value.AddHours(Utility.GetAppsettingsValue("AMPECOConfiguration", "TimeDiffAdd").ToAnyType<int>());
+                //    x.StoppedAt = x.StoppedAt.Value.AddHours(Utility.GetAppsettingsValue("AMPECOConfiguration", "TimeDiffAdd").ToAnyType<int>());
+                //});
+
+                foreach (var x in sessions)
+                {
+                    if (x.StartedAt.HasValue)
+                    {
+                        x.StartedAt = x.StartedAt.Value.AddHours(Utility.GetAppsettingsValue("AMPECOConfiguration", "TimeDiffAdd").ToAnyType<int>());
+                    }
+
+                    if (x.StoppedAt.HasValue)
+                    {
+                        x.StoppedAt = x.StoppedAt.Value.AddHours(Utility.GetAppsettingsValue("AMPECOConfiguration", "TimeDiffAdd").ToAnyType<int>());
+                    }
+                }
+
                 var users = (await _user.GetFullResourcesData()).DistinctBy(x => x.Id).ToList();
                 var chargePoints = (await _aMPECOChargePoints.GetFullResourcesData()).DistinctBy(x => x.Id).ToList();
                 var evses = (await _aMPECOEvses.GetFullResourcesData()).DistinctBy(x => x.Id).ToList();
-                var authorization = (await _aMPECOAuthorization.GetFullResourcesData()).DistinctBy(x => x.Id).ToList();
+                var authorization = (await _aMPECOAuthorization.GetFullResourcesData(_fromDate: fromDate, _toDate: toDate)).DistinctBy(x => x.Id).ToList();
                 var userGroups = (await _userGroupResource.GetFullResourcesData()).DistinctBy(x => x.Id).ToList();
 
                 var usersDictionary = users.ToDictionary(x => x.Id);
@@ -80,11 +123,30 @@ namespace CATECEV.API.Controllers
                 var authorizationDictionary = authorization.ToDictionary(x => x.Id);
                 var entityGroupDataDictionary = userGroups.ToDictionary(x => x.Id);
 
+                var currentPartnerCharePointIds = chargePoints.Where(x => x.OwnerPartnerId == partnerId).Select(x => x.Id);
+
+                var test = sessions.FirstOrDefault(x=>x.Id == "92015");
+
+                sessions = sessions.Where(x => 
+                    currentPartnerCharePointIds.Contains(x.ChargePointId) 
+                    && (x.PaymentStatus == "partially" || x.PaymentStatus == "paid")
+                    && x.StartedAt.Value >= _fromDate && x.StartedAt.Value <= _toDate
+                    && x.Status == "finished").ToList();
+
+                var test2 = sessions.FirstOrDefault(x => x.Id == "92015");
+
+                /*               var ids = new List<string>
+                {
+                    "92811", "92810", "92809", "92808", "92807", "92806", "92805", "92804",
+                    "92803", "92802", "92801", "92800", "92799", "92854", "92852", "92851",
+                    "92850", "92848", "92847", "92846", "92844", "92843", "92842", "92841",
+                    "92840", "92839", "92837", "92836", "92834", "92833", "92832", "92831",
+                    "92830", "92829", "92827", "92826", "92825", "92824", "92823", "92822",
+                    "92821", "92820", "92818", "92817", "92815", "92813", "92812", "92015",
+                    "88206", "85914"
+                };*/
+
                 var SessionsRawData = sessions
-                    .Where(a =>
-                    (a.PaymentStatus == "partially" || a.PaymentStatus == "paid")
-                    && a.Status == "finished"
-                    && a.StartedAt.HasValue && a.StartedAt.Value.Date >= _fromDate.Date && a.StartedAt.Value.Date <= _toDate.Date)
                     .Select(a => new ChargingSessionViewModel
                     {
                         ID = a.Id,
@@ -123,8 +185,13 @@ namespace CATECEV.API.Controllers
                         //RoamingCPO = e.Roaming is not null ? e.Roaming.Status : string.Empty,
                     }).ToList();
 
+
                 foreach (var item in SessionsRawData)
                 {
+                    if (item.ID == "92015")
+                    {
+
+                    }
                     if (usersDictionary.TryGetValue(item.UserID.ToString(), out var userData))
                     {
                         item.User = (userData.FirstName ?? "") + " " + (userData.LastName ?? "");
@@ -191,7 +258,7 @@ namespace CATECEV.API.Controllers
                     }
                 }
 
-                SessionsRawData = SessionsRawData.Where(x => x.OwnerPartnerId == partnerId).ToList();
+                var test4 = SessionsRawData.FirstOrDefault(x => x.ID == "92015");
 
                 #region MyRegion
                 //var result = from a in sessions
