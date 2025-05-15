@@ -4,6 +4,7 @@ using CATECEV.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CATECEV.Data.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250513104114_addpartnertables")]
+    partial class addpartnertables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -58,14 +61,8 @@ namespace CATECEV.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AMPECOId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("BalanceAmount")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("City")
                         .HasColumnType("nvarchar(max)");
@@ -93,9 +90,6 @@ namespace CATECEV.Data.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime>("LastCalculationBalanceDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("LastUpdatedAt")
                         .HasColumnType("datetime2");
@@ -1150,36 +1144,6 @@ namespace CATECEV.Data.Migrations
                     b.ToTable("Country");
                 });
 
-            modelBuilder.Entity("CATECEV.Models.Entity.PartnerPayment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CreatedOn")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("PartnerId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("PaymentAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("PaymentDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PartnerId");
-
-                    b.ToTable("PartnerPayment");
-                });
-
             modelBuilder.Entity("CATECEV.Models.Entity.Shared.LookupCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -1538,17 +1502,6 @@ namespace CATECEV.Data.Migrations
                     b.Navigation("Country");
                 });
 
-            modelBuilder.Entity("CATECEV.Models.Entity.PartnerPayment", b =>
-                {
-                    b.HasOne("CATECEV.Models.Entity.AMPECO.Resources.AmbPartner.Partner", "Partner")
-                        .WithMany("PartnerPayments")
-                        .HasForeignKey("PartnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Partner");
-                });
-
             modelBuilder.Entity("CATECEV.Models.Entity.Shared.Lookups", b =>
                 {
                     b.HasOne("CATECEV.Models.Entity.Shared.LookupCategory", "LookupCategory")
@@ -1588,11 +1541,6 @@ namespace CATECEV.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Vehicle");
-                });
-
-            modelBuilder.Entity("CATECEV.Models.Entity.AMPECO.Resources.AmbPartner.Partner", b =>
-                {
-                    b.Navigation("PartnerPayments");
                 });
 
             modelBuilder.Entity("CATECEV.Models.Entity.AMPECO.Resources.ChargePoint.ChargePointEntity", b =>

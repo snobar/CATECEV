@@ -1,4 +1,5 @@
 ﻿using CATECEV.Models.Entity;
+using CATECEV.Models.Entity.AMPECO.Resources.AmbPartner;
 using CATECEV.Models.Entity.AMPECO.Resources.Authorization;
 using CATECEV.Models.Entity.AMPECO.Resources.ChargePoint;
 using CATECEV.Models.Entity.AMPECO.Resources.Location;
@@ -30,6 +31,10 @@ namespace CATECEV.Data.Context
         public DbSet<ConnectorEntity> Connector { get; set; }
         public DbSet<EvseEntity> Evse { get; set; }
         public DbSet<TaxEntity> Tax { get; set; }
+        public DbSet<Partner> Partner { get; set; }
+        public DbSet<PartnerPayment> PartnerPayment { get; set; }
+        public DbSet<CorporateBilling> CorporateBilling { get; set; }
+        public DbSet<PartnerOptions> PartnerOptions { get; set; }
         public DbSet<TaxDisplayNameEntity> TaxDisplayName { get; set; }
         public DbSet<LocationEntity> Location { get; set; }
         public DbSet<LocationNameLocalization> LocationName { get; set; }
@@ -115,6 +120,15 @@ namespace CATECEV.Data.Context
             modelBuilder.Entity<City>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
+            });
+            modelBuilder.Entity<Partner>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasMany(e => e.PartnerPayments)
+                 .WithOne(c => c.Partner)
+                 .HasForeignKey(c => c.PartnerId)
+                 .OnDelete(DeleteBehavior.Restrict);
 
             });
             #endregion

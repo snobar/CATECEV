@@ -4,6 +4,7 @@ using CATECEV.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CATECEV.Data.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    partial class AppDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250515103021_updatepartnerdata")]
+    partial class updatepartnerdata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -64,8 +67,8 @@ namespace CATECEV.Data.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("BalanceAmount")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<float>("BalanceAmount")
+                        .HasColumnType("real");
 
                     b.Property<string>("City")
                         .HasColumnType("nvarchar(max)");
@@ -1158,6 +1161,9 @@ namespace CATECEV.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<double>("BalanceAmount")
+                        .HasColumnType("float");
+
                     b.Property<string>("CreatedOn")
                         .HasColumnType("nvarchar(max)");
 
@@ -1167,8 +1173,8 @@ namespace CATECEV.Data.Migrations
                     b.Property<int>("PartnerId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("PaymentAmount")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<double>("PaymentAmount")
+                        .HasColumnType("float");
 
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("datetime2");

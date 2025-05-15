@@ -53,6 +53,10 @@ namespace CATECEV.API.Helper.Service
             {
                 _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "AMPECOPartner")}";
             }
+            else if (typeof(T) == typeof(Models.AMPECO.resource.PartnerExpenses.PartnerExpensesResponse))
+            {
+                _ampecoBaseUrl = $"{Utility.GetAppsettingsValue("AMPECOConfiguration", "AmpecoBaseUrl")}{Utility.GetAppsettingsValue("Resources", "AMPECOPartnerExpense")}";
+            }
 
             _token = Utility.GetAppsettingsValue("AMPECOConfiguration", "AccessToken");
             _httpClientService = httpClientService;

@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using CATECEV.API.Models.AMPECO.resource.Partner;
 using CATECEV.CORE.Extensions;
+using CATECEV.Models.Entity.AMPECO.Resources.AmbPartner;
 
 namespace CATECEV.API.Mapper
 {
@@ -133,6 +135,20 @@ namespace CATECEV.API.Mapper
                 .ForMember(dest => dest.ChargePointId, opt => opt.MapFrom(src => src.AMPECOChargePointId))
                 .ForMember(dest => dest.EvseId, opt => opt.MapFrom(src => src.AMPECOEvseId));
             #endregion
+
+
+            CreateMap<Options, PartnerOptions>().ReverseMap();
+
+            CreateMap<Models.AMPECO.resource.Partner.CorporateBilling, CATECEV.Models.Entity.AMPECO.Resources.AmbPartner.CorporateBilling>().ReverseMap();
+            CreateMap<AMPECOPartner, Partner>()
+    .ForMember(dest => dest.AMPECOId, opt => opt.MapFrom(src => src.Id.ToString()))
+                    .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.Options))
+                .ForMember(dest => dest.CorporateBilling, opt => opt.MapFrom(src => src.CorporateBilling))
+    .ForMember(dest => dest.Id, opt => opt.Ignore()) // <-- Important
+    .ReverseMap();
+
+ 
+
 
         }
     }

@@ -1,0 +1,79 @@
+﻿@using CATECEV.FE.Models.ViewModels
+@model PartnerPaymentPageViewModel
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(function () {
+            $('#paymentForm').submit(function (e) {
+                e.preventDefault();
+                $('.text-danger').text(''); // clear previous errors
+
+                $.ajax({
+                    url: '@Url.Action("Add", "PartnerPayment")',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (res) {
+                        if (res.success) {
+                            let row = `<tr>
+                                <td>${res.row.partnerName}</td>
+                                <td>${res.row.paymentAmount}</td>
+                                <td>${res.row.balanceAmount}</td>
+                                <td>${res.row.date}</td>
+                            </tr>`;
+                            $('#paymentsTable tbody').prepend(row);
+                            $('#paymentForm')[0].reset();
+                        } else {
+                            res.errors.forEach(function (msg, i) {
+                                $(`.field-validation-error:eq(${i})`).text(msg);
+                            });
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+@using (Html.BeginForm("Add", "PartnerPayment", FormMethod.Post, new { @class = "d-flex flex-wrap align-items-end gap-2 mb-4", }))
+{
+    <div>
+        @Html.LabelFor(m => m.NewPayment.PartnerId, new { @class = "form-label" })
+        @Html.DropDownListFor(m => m.NewPayment.PartnerId, Model.Partners, "Select", new { @class = "form-control" })
+    </div>
+    <div>
+        @Html.LabelFor(m => m.NewPayment.PaymentAmount, new { @class = "form-label" })
+        @Html.TextBoxFor(m => m.NewPayment.PaymentAmount, new { @class = "form-control", type = "number", step = "0.01" })
+    </div>
+    <div>
+        @Html.LabelFor(m => m.NewPayment.PaymentDate, new { @class = "form-label" })
+        @Html.TextBoxFor(m => m.NewPayment.PaymentDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+    </div>
+    <div>
+        <label class="form-label d-block">&nbsp;</label>
+        <button type="submit" class="btn btn-primary">Add</button>
+    </div>
+}
+
+<hr />
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Partner</th>
+            <th>Payment</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Payments)
+        {
+            <tr>
+                <td>@item.PartnerName</td>
+                <td>@item.PaymentAmount</td>
+                <td>@item.PaymentDate.ToShortDateString()</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

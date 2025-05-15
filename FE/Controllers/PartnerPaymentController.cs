@@ -1,22 +1,21 @@
-﻿using CATECEV.CORE.Extensions;
-using CATECEV.Data.Context;
-using CATECEV.FE.Models;
-using CATECEV.Models.Entity;
+﻿using CATECEV.Data.Context;
 using CATECEV.FE.Models.ViewModels;
+using CATECEV.Models.Entity;
+using CATECEV.Models.Entity.AMPECO.Resources.AmbPartner;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using System.Net.Http;
 
 namespace CATECEV.FE.Controllers
 {
-    public class HomeController : Controller
+    public class PartnerPaymentController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ILogger<PartnerPaymentController> _logger;
         private readonly AppDBContext _appContext;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
-        public HomeController(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<HomeController> logger, AppDBContext appContext)
+        public PartnerPaymentController(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<PartnerPaymentController> logger, AppDBContext appContext)
         {
             _logger = logger;
             _appContext = appContext;
@@ -24,49 +23,9 @@ namespace CATECEV.FE.Controllers
             _configuration = configuration;
         }
 
-        public IActionResult Index()
-        {
-            var partner = _appContext.Partner.ToList();
-            return View(partner);
-        }
 
-        public IActionResult Manage(int id)
-        {
-            var payments = _appContext.PartnerPayment
-                .Include(p => p.Partner)
-                .Where(x => x.PartnerId == id)
-                .Select(p => new PartnerPaymentViewModel
-                {
-                    Id = p.Id,
-                    PartnerId = p.PartnerId,
-                    PartnerName = p.Partner.Name,
-                    PaymentAmount = p.PaymentAmount,
-                    PaymentDate = p.PaymentDate
-                }).ToList();
 
-            // Fetch the selected partner
-            var selectedPartner = _appContext.Partner.FirstOrDefault(p => p.Id == id);
-
-            var model = new PartnerPaymentPageViewModel
-            {
-                NewPayment = new PartnerPaymentViewModel
-                {
-                    PartnerId = id,
-                    PaymentDate = DateTime.Today
-                },
-                Payments = payments,
-                Partners = _appContext.Partner.Select(p => new SelectListItem
-                {
-                    Value = p.Id.ToString(),
-                    Text = p.Name
-                }).ToList(),
-                SelectedPartner = selectedPartner // ← here’s the important addition
-            };
-
-            return View(model);
-
-        }
-        public async Task<IActionResult> Basket()
+        public async Task<IActionResult> Index()
         {
 
             var payments = _appContext.PartnerPayment
@@ -98,7 +57,7 @@ namespace CATECEV.FE.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Manage(PartnerPaymentPageViewModel model)
+        public async Task<IActionResult> Add(PartnerPaymentPageViewModel model)
         {
 
             if (!ModelState.IsValid)
@@ -159,5 +118,7 @@ namespace CATECEV.FE.Controllers
                 }
             });
         }
+
     }
+
 }

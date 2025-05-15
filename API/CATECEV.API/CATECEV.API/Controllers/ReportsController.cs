@@ -1,13 +1,19 @@
 ﻿using AutoMapper;
 using CATECEV.API.Helper.IService;
+using CATECEV.API.Models.AMPECO.resource.Partner;
+using CATECEV.API.Models.AMPECO.resource.PartnerExpenses;
 using CATECEV.API.Models.Reports.Sessions;
 using CATECEV.CORE.Extensions;
 using CATECEV.CORE.Framework;
 using CATECEV.CORE.Logger;
+using CATECEV.CORE.model;
+using CATECEV.CORE.Wrapper;
 using CATECEV.Data.Context;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 
 namespace CATECEV.API.Controllers
 {
@@ -19,6 +25,8 @@ namespace CATECEV.API.Controllers
         private readonly IMapper _mapper;
         private readonly IAMPECOResource<Models.AMPECO.resource.Location.Location> _locationResource;
         private readonly IAMPECOResource<Models.AMPECO.resource.Partner.AMPECOPartner> _partnerResource;
+        private readonly IAMPECOResource<Models.AMPECO.resource.PartnerExpenses.AMPECOPartnerExpense> _partnerExpenseResource;
+        private string _token;
 
         private readonly IAMPECOResource<Models.AMPECO.resource.Session.ChargingSession> _aMPECOSessions;
         private readonly IAMPECOResource<Models.AMPECO.resource.users.User> _user;
@@ -30,18 +38,22 @@ namespace CATECEV.API.Controllers
         private static Dictionary<int, Models.AMPECO.resource.Location.Location> locationKeyValuePairs = new Dictionary<int, Models.AMPECO.resource.Location.Location>();
         private static Dictionary<int, Models.AMPECO.resource.Partner.AMPECOPartner> partnerKeyValuePairs = new Dictionary<int, Models.AMPECO.resource.Partner.AMPECOPartner>();
 
-        public ReportsController(AppDBContext appContext, IMapper mapper, IAMPECOResource<Models.AMPECO.resource.Location.Location> locationResource, IAMPECOResource<Models.AMPECO.resource.Partner.AMPECOPartner> partnerResource, IAMPECOResource<Models.AMPECO.resource.Session.ChargingSession> aMPECOSessions, IAMPECOResource<Models.AMPECO.resource.users.User> user, IAMPECOResource<Models.AMPECO.resource.ChargePoint.ChargePoint> aMPECOChargePoints, IAMPECOResource<Models.AMPECO.resource.ChargePoint.Evse> aMPECOEvses, IAMPECOResource<Models.AMPECO.resource.Authorization.Authorization> aMPECOAuthorization, IAMPECOResource<Models.AMPECO.resource.users.UserGroup> userGroupResource)
+        public ReportsController(AppDBContext appContext, IMapper mapper, IAMPECOResource<Models.AMPECO.resource.Location.Location> locationResource, IAMPECOResource<Models.AMPECO.resource.Partner.AMPECOPartner> partnerResource, IAMPECOResource<Models.AMPECO.resource.PartnerExpenses.AMPECOPartnerExpense> partnerExpenseResource, IAMPECOResource<Models.AMPECO.resource.Session.ChargingSession> aMPECOSessions, IAMPECOResource<Models.AMPECO.resource.users.User> user, IAMPECOResource<Models.AMPECO.resource.ChargePoint.ChargePoint> aMPECOChargePoints, IAMPECOResource<Models.AMPECO.resource.ChargePoint.Evse> aMPECOEvses, IAMPECOResource<Models.AMPECO.resource.Authorization.Authorization> aMPECOAuthorization, IAMPECOResource<Models.AMPECO.resource.users.UserGroup> userGroupResource)
         {
             _appContext = appContext;
             _mapper = mapper;
             _locationResource = locationResource;
             _partnerResource = partnerResource;
+            _partnerExpenseResource = partnerExpenseResource;
+
             _aMPECOSessions = aMPECOSessions;
             _user = user;
             _aMPECOChargePoints = aMPECOChargePoints;
             _aMPECOEvses = aMPECOEvses;
             _aMPECOAuthorization = aMPECOAuthorization;
             _userGroupResource = userGroupResource;
+            _token = Utility.GetAppsettingsValue("AMPECOConfiguration", "AccessToken");
+
         }
 
         [HttpGet("SessionsRawData")]
@@ -125,10 +137,10 @@ namespace CATECEV.API.Controllers
 
                 var currentPartnerCharePointIds = chargePoints.Where(x => x.OwnerPartnerId == partnerId).Select(x => x.Id);
 
-                var test = sessions.FirstOrDefault(x=>x.Id == "92015");
+                var test = sessions.FirstOrDefault(x => x.Id == "92015");
 
-                sessions = sessions.Where(x => 
-                    currentPartnerCharePointIds.Contains(x.ChargePointId) 
+                sessions = sessions.Where(x =>
+                    currentPartnerCharePointIds.Contains(x.ChargePointId)
                     && (x.PaymentStatus == "partially" || x.PaymentStatus == "paid")
                     && x.StartedAt.Value >= _fromDate && x.StartedAt.Value <= _toDate
                     && x.Status == "finished").ToList();
@@ -356,6 +368,140 @@ namespace CATECEV.API.Controllers
                 FileLogger.WriteLog($"SessionsRawData \nMessage: {ex.Message}\n InnerException: {ex.InnerException}");
                 return StatusCode(500, false);
             }
+        }
+
+
+        [HttpGet("AmbecoPartnerData")]
+        public async Task<IActionResult> AmbecoPartnerData(string fromDate, string toDate)
+        {
+            try
+            {
+                string[] validFormats = new[]
+{
+                    "yyyy-MM-dd"
+                };
+
+
+                var tempFromData = DateTime.Now;
+                var tempToDate = DateTime.Now;
+
+                if (DateTime.TryParseExact(fromDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var _fromDate))
+                {
+                    tempFromData = _fromDate;
+                    //_fromDate = _fromDate.AddHours(Utility.GetAppsettingsValue("AMPECOConfiguration", "TimeDiffAdd").ToAnyType<int>());
+                    fromDate = _fromDate.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                }
+
+                if (DateTime.TryParseExact(toDate, validFormats, null, System.Globalization.DateTimeStyles.None, out var _toDate))
+                {
+                    tempToDate = _toDate;
+                    _toDate = _toDate.Date.AddDays(1).AddMilliseconds(-1);
+                    //_toDate = _toDate.AddHours(Utility.GetAppsettingsValue("AMPECOConfiguration", "TimeDiffAdd").ToAnyType<int>());
+                    toDate = _toDate.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                }
+
+                var startTime = DateTime.Now;
+
+
+                var httpClient = new HttpClient();
+                var apiService = new ApiService(httpClient);
+
+                string initialUrl = "https://shabikuae.eu.charge.ampeco.tech/public-api/resources/partners/v2.0";
+
+                List<AMPECOPartner> allReportpartners = await apiService.GetAllPaginatedDataAsync<AMPECOPartner>(initialUrl, _token);
+                var mappedData = _mapper.Map<List<AMPECOPartner>, List<CATECEV.Models.Entity.AMPECO.Resources.AmbPartner.Partner>>(allReportpartners);
+
+                if (mappedData.IsNotNullOrEmpty())
+                {
+                    var allPartnerGroupEntity = await _appContext.Partner.Where(x => x.IsActive).ToListAsync();
+                    var allPartnerEntityDictionary = allPartnerGroupEntity.ToDictionary(x => x.AMPECOId);
+
+                    var filterdPartnerEntity = mappedData.Where(x => !allPartnerEntityDictionary.ContainsKey(x.AMPECOId));
+
+                    if (filterdPartnerEntity.IsNotNullOrEmpty())
+                    {
+                        await _appContext.Partner.AddRangeAsync(filterdPartnerEntity.DistinctBy(x => x.AMPECOId));
+                        await _appContext.SaveChangesAsync();
+                    }
+                }
+                var dateDiff = (DateTime.Now - startTime).TotalSeconds;
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLog($"SessionsRawData \nMessage: {ex.Message}\n InnerException: {ex.InnerException}");
+                return StatusCode(500, false);
+            }
+        }
+
+        [HttpGet("AmbecoPartnerExpenseData")]
+        public async Task<IActionResult> AmbecoPartnerExpenseData(int partnerId)
+        {
+            try
+            {
+                var httpClient = new HttpClient();
+                var apiService = new ApiService(httpClient);
+
+                var selectedPartner = _appContext.Partner.FirstOrDefault(x => x.Id == partnerId);
+                if (selectedPartner != null && selectedPartner.LastCalculationBalanceDate == DateTime.MinValue)
+                {
+                    selectedPartner.LastCalculationBalanceDate = DateTime.Now;
+                }
+                string initialUrl = $"https://shabikuae.eu.charge.ampeco.tech/public-api/resources/partner-expenses/v1.1?filter[partnerId]={selectedPartner.AMPECOId}&filter[dateBefore]={DateTime.Now}&filter[dateAfter]={selectedPartner.LastCalculationBalanceDate}";
+
+                List<AMPECOPartnerExpense> allReports = await apiService.GetAllPaginatedDataAsync<AMPECOPartnerExpense>(initialUrl, _token);
+
+                decimal totalWithoutTax = allReports.Sum(r => r.TotalAmount?.WithoutTax ?? 0);
+
+                selectedPartner.LastCalculationBalanceDate = DateTime.Now;
+                selectedPartner.BalanceAmount -= totalWithoutTax;
+                _appContext.Partner.Update(selectedPartner);
+                await _appContext.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                FileLogger.WriteLog($"SessionsRawData \nMessage: {ex.Message}\n InnerException: {ex.InnerException}");
+                return StatusCode(500, false);
+            }
+        }
+
+        private async Task<IEnumerable<T>> GetResourcesDataEntity<T, TAMPECO, TService>(TService service) where TService : IAMPECOResource<TAMPECO>
+        {
+            var pageNumber = 1;
+
+            var resourceData = await service.GetResourceDataList(pageNumber);
+            if (resourceData is null || !resourceData.Data.IsNotNullOrEmpty() || resourceData.TotalRecords <= 0)
+                return new List<T>();
+
+            var totalPages = resourceData.TotalPages;
+            var batchSize = 30;
+            var resourceEntity = new ConcurrentBag<T>();
+
+
+            var dateTime = DateTime.Now;
+
+            for (var i = 1; i <= totalPages; i += batchSize)
+            {
+                var tasks = Enumerable.Range(i, Math.Min(batchSize, totalPages - i + 1))
+                    .Select(async page =>
+                    {
+                        var pageData = await service.GetResourceDataList(page);
+                        if (pageData != null && pageData.Data.IsNotNullOrEmpty())
+                        {
+                            var mappedData = _mapper.Map<IEnumerable<TAMPECO>, IEnumerable<T>>(pageData.Data);
+                            foreach (var item in mappedData)
+                            {
+                                resourceEntity.Add(item);
+                            }
+                        }
+                    });
+
+                await Task.WhenAll(tasks);
+            }
+
+            return resourceEntity;
         }
     }
 }

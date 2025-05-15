@@ -1,0 +1,76 @@
+﻿@model IEnumerable<CATECEV.Models.Entity.Company>
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="row mb-3">
+    <div class="col-12">
+        <a class="btn btn-outline-primary" asp-action="Manage" asp-controller="Home">New Company</a>
+    </div>
+    <div class="col-12">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Company Name</th>
+                    <th scope="col">Company Reg. No.</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Mobile</th>
+                    <th scope="col">Top Up Amount</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.IsNotNullOrEmpty())
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.CompanyName</td>
+                            <td>@item.CompanyRegistrationNumber</td>
+                            <td>@item.Email</td>
+                            <td>@item.Mobile</td>
+                            <td>@item.TopUpAmount</td>
+
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span>Active</span>
+                                }
+                                else
+                                {
+                                    <span>Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <a asp-action="Manage" asp-controller="Home" asp-route-CompanyId="@item.Id">
+                                        <span>Manage</span>
+                                    </a>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="AciveInactiveCompany" asp-controller="Home"
+                                   asp-route-CompanyId="@item.Id"
+                                   asp-route-isActive="@(!item.IsActive)"
+                                   onclick="return confirm('Are you sure you want to proceed?');">
+                                    @if (item.IsActive)
+                                    {
+                                        <span>Inactive</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Active</span>
+                                    }
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
