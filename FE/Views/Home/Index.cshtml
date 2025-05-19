@@ -1,49 +1,19 @@
-﻿@using CATECEV.Models.Entity.AMPECO.Resources.AmbPartner
-@model IEnumerable<Partner>
-
-
-@{
-    ViewData["Title"] = "Partners";
+﻿@{
+    ViewData["Title"] = "Welcome";
 }
+
 <style>
-    table {
-        font-size: 11px;
+    .center-message {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 70vh;
+        font-size: 32px;
+        font-weight: bold;
+        color: #2c3e50;
     }
-
-        table td, table th {
-            padding: 4px 6px !important;
-            line-height: 1.2 !important;
-            vertical-align: middle;
-        }
 </style>
-<h2>Partner List</h2>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Balance Amount</th>
-            <th>Last Calculation Date</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Name</td>
-                <td>@item.BalanceAmount.ToString()</td>
-                <td>
-                    @(item.LastCalculationBalanceDate == DateTime.MinValue
-                        ? ""
-                        : item.LastCalculationBalanceDate.ToString("yyyy-MM-dd"))
-                </td>
-                <td>
-                    <a asp-action="Manage" asp-route-id="@item.Id"
-                       class="btn btn-primary"
-                       style="padding: 2px 6px; font-size: 8px; line-height: 1.2;color:white">Manage</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="center-message">
+    Welcome to CATEC
+</div>

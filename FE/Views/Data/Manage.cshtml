@@ -17,7 +17,7 @@
             }
 
             $.ajax({
-                url: '@Url.Action("Manage", "Home")',
+                url: '@Url.Action("Manage", "Data")',
                 type: 'POST',
                 data: $(this).serialize(),
                 success: function (res) {
@@ -40,7 +40,7 @@
             $('#refreshSuccessMsg').hide(); // hide before reloading
 
             $.ajax({
-                url: '@Url.Action("RefreshBalance", "Home")',
+                url: '@Url.Action("RefreshBalance", "Data")',
                 type: 'GET',
                 data: { id: '@Model.NewPayment.PartnerId' },
                 success: function (res) {
@@ -50,6 +50,30 @@
                         $('#refreshSuccessMsg').fadeIn().delay(2000).fadeOut(); // show for 2s
                     } else {
                         alert("Failed to refresh balance.");
+                    }
+                },
+                error: function () {
+                    $icon.removeClass('fa-spin');
+                    alert("Error contacting server.");
+                }
+            });
+        });
+
+                $('#sendEmailBtn').click(function () {
+            var $icon = $(this).find('i');
+            $icon.addClass('fa-spin');
+            $('#emailSuccessMsg').hide();
+
+            $.ajax({
+                url: '@Url.Action("SendBalanceEmail", "Data")',
+                type: 'POST',
+                data: { id: '@Model.NewPayment.PartnerId' },
+                success: function (res) {
+                    $icon.removeClass('fa-spin');
+                    if (res.success) {
+                        $('#emailSuccessMsg').fadeIn().delay(2000).fadeOut();
+                    } else {
+                        alert("Failed to send email.");
                     }
                 },
                 error: function () {
@@ -75,7 +99,7 @@
     }
 </style>
 <div class="mb-3">
-    <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">
+    <a asp-action="Index" asp-controller="Data" class="btn btn-secondary">
         ← Back to Partner List
     </a>
 </div>
@@ -100,7 +124,12 @@
                         <i class="fas fa-sync-alt"></i>
                     </button>
 
+                    <button id="sendEmailBtn" class="btn btn-outline-primary btn-sm ms-2" type="button" title="Send Balance Email">
+                        <i class="fas fa-envelope"></i>
+                    </button>
+
                     <span id="refreshSuccessMsg" class="ms-2 text-success fw-bold" style="display:none;">✔ Refreshed</span>
+                    <span id="emailSuccessMsg" class="ms-2 text-success fw-bold" style="display:none;">📧 Sent</span>
                 </div>
             </dd>
 
@@ -108,7 +137,7 @@
     </div>
 }
 
-@using (Html.BeginForm("Manage", "Home", FormMethod.Post, new { @id = "paymentForm", @class = "d-flex flex-wrap align-items-end gap-2 mb-4" }))
+@using (Html.BeginForm("Manage", "Data", FormMethod.Post, new { @id = "paymentForm", @class = "d-flex flex-wrap align-items-end gap-2 mb-4" }))
 {
     @Html.HiddenFor(m => m.NewPayment.PartnerId)
 

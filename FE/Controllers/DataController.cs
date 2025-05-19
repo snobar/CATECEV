@@ -1,35 +1,34 @@
-﻿using CATECEV.CORE.Extensions;
-using CATECEV.Data.Context;
-using CATECEV.FE.Models;
-using CATECEV.Models.Entity;
-using CATECEV.FE.Models.ViewModels;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.DotNet.Scaffolding.Shared;
+﻿using CATECEV.Data.Context;
 using CATECEV.FE.Extensions;
-using CATECEV.Models.Entity.AMPECO.Resources.AmbPartner;
+using CATECEV.FE.Models.ViewModels;
+using CATECEV.Models.Entity;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using System.Net.Mail;
+using System.Net;
+using Microsoft.Extensions.Options;
 
 namespace CATECEV.FE.Controllers
 {
-    public class HomeController : Controller
+    public class DataController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ILogger<DataController> _logger;
         private readonly AppDBContext _appContext;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly IDataProtector _protector;
+        private readonly SmtpSettings _smtpSettings;
 
-        public HomeController(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<HomeController> logger, AppDBContext appContext, IDataProtectionProvider provider)
+        public DataController(IOptions<SmtpSettings> smtpOptions, IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<DataController> logger, AppDBContext appContext, IDataProtectionProvider provider)
         {
             _logger = logger;
             _appContext = appContext;
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _protector = provider.CreateProtector("PartnerIdProtector");
-
+            _smtpSettings = smtpOptions.Value;
         }
 
         public IActionResult Index()
@@ -193,7 +192,96 @@ namespace CATECEV.FE.Controllers
             return View(model);
         }
 
+        [HttpPost]
+        public IActionResult SendBalanceEmail(string id)
+        {
+            int partnerId;
+            try
+            {
+                partnerId = ShortEncryptor.Decrypt(id);
+            }
+            catch
+            {
+                return BadRequest("Invalid or tampered ID");
+            }
+            var partner = _appContext.Partner.FirstOrDefault(p => p.Id == partnerId);
+            if (partner == null || string.IsNullOrWhiteSpace(partner.Email))
+                return Json(new { success = false, message = "Partner or email not found" });
 
+            try
+            {
+                var subject = "Balance Information from CATEC";
+                var body = $@"
+<html>
+<head>
+  <style>
+    body {{
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      color: #333;
+    }}
+    .container {{
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: #f9f9f9;
+    }}
+    .header {{
+      font-size: 18px;
+      font-weight: bold;
+      color: #005b96;
+      margin-bottom: 10px;
+    }}
+    .highlight {{
+      background-color: yellow;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+    }}
+    .footer {{
+      margin-top: 20px;
+      font-size: 12px;
+      color: #888;
+    }}
+  </style>
+</head>
+<body>
+  <div class='container'>
+    <div class='header'>Balance Notification</div>
+    <p>Dear <strong>{partner.Name}</strong>,</p>
+
+    <p>Your current balance information is as follows:</p>
+
+    <p>Balance Amount: <span class='highlight'>{partner.BalanceAmount}</span></p>
+    <p>Last Calculation Date: {partner.LastCalculationBalanceDate:yyyy-MM-dd HH:mm}</p>
+
+    <p>Thank you for using <strong>CATEC</strong>.</p>
+
+    <!-- ❗ Disclaimer Section -->
+    <p style='color: #888; font-size: 12px; margin-top: 20px;'>
+        Disclaimer: This email is not considered an official communication. The information provided — including any figures or balances — is for informational purposes only and may not reflect the final or accurate data. Please do not rely on it for any formal or official use.
+    </p>
+
+    <div class='footer'>
+      CATEC System • <a href='https://www.catec.ae'>www.catec.ae</a>
+    </div>
+  </div>
+</body>
+</html>";
+
+
+
+
+                SendEmail(partner.Email, subject, body);
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                // Optionally log the exception
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
         private async Task GetPartnerExpense(int partnerId)
         {
 
@@ -220,6 +308,26 @@ namespace CATECEV.FE.Controllers
             {
                 ViewBag.ApiError = $"Exception: {ex.Message}";
             }
+        }
+        private void SendEmail(string toEmail, string subject, string body)
+        {
+            using var smtpClient = new SmtpClient(_smtpSettings.Host)
+            {
+                Port = int.Parse(_smtpSettings.Port),
+                Credentials = new NetworkCredential(_smtpSettings.UserName, _smtpSettings.Password),
+                EnableSsl = true // Office365 requires SSL/TLS even if "UseSSL" is false in config
+            };
+
+            var mailMessage = new MailMessage
+            {
+                From = new MailAddress(_smtpSettings.From, _smtpSettings.Alias),
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = true
+            };
+            mailMessage.To.Add(toEmail);
+
+            smtpClient.Send(mailMessage);
         }
 
     }

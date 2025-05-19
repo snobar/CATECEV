@@ -1,6 +1,7 @@
 using CATECEV.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using CATECEV.Data.Configure;
+using CATECEV.FE.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,8 @@ builder.Services.AddHttpClient();
 //    options.UseSqlServer(connectionString));
 
 builder.Services.ConfigureContext();
+builder.Services.AddDataProtection();
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SMTP"));
 
 var app = builder.Build();
 

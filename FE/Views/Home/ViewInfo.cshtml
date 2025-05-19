@@ -1,0 +1,74 @@
+﻿@using CATECEV.FE.Models.ViewModels
+@model PartnerPaymentPageViewModel
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $('#refreshBalanceBtn').click(function () {
+            var $icon = $(this).find('i');
+            $icon.addClass('fa-spin');
+            $('#refreshSuccessMsg').hide(); // hide before reloading
+
+            $.ajax({
+                url: '@Url.Action("RefreshBalance", "Data")',
+                type: 'GET',
+                data: { id: '@Model.NewPayment.PartnerId' },
+                success: function (res) {
+                    $icon.removeClass('fa-spin');
+                    if (res.success) {
+                        $('#balanceAmountText').text(res.newBalance);
+                        $('#refreshSuccessMsg').fadeIn().delay(2000).fadeOut(); // show for 2s
+                    } else {
+                        alert("Failed to refresh balance.");
+                    }
+                },
+                error: function () {
+                    $icon.removeClass('fa-spin');
+                    alert("Error contacting server.");
+                }
+            });
+        });
+
+
+    </script>
+}
+
+<style>
+    body {
+        font-size: 12px;
+    }
+
+    table, table th, table td,
+    form, form label, form input,
+    .btn {
+        font-size: 12px !important;
+    }
+</style>
+
+@if (Model.SelectedPartner != null)
+{
+    <div class="mb-4 border p-3 rounded bg-light">
+        <h6>Partner Information</h6>
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Name</dt>
+            <dd class="col-sm-9">@Model.SelectedPartner.Name</dd>
+
+            <dt class="col-sm-3">Reg No</dt>
+            <dd class="col-sm-9">@Model.SelectedPartner.RegNo</dd>
+
+            <dt class="col-sm-3">Balance Amount</dt>
+            <dd class="col-sm-9">
+                <div class="d-flex align-items-center">
+                    <span id="balanceAmountText">@Model.SelectedPartner.BalanceAmount.ToString()</span>
+
+                    <button id="refreshBalanceBtn" class="btn btn-outline-secondary btn-sm ms-2" type="button" title="Refresh Amount Balance">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+
+                    <span id="refreshSuccessMsg" class="ms-2 text-success fw-bold" style="display:none;">✔ Refreshed</span>
+                </div>
+            </dd>
+
+        </dl>
+    </div>
+}

@@ -5,7 +5,7 @@ namespace CATECEV.FE.Models.ViewModels
     public class PartnerPaymentViewModel
     {
         public int Id { get; set; }
-        public int PartnerId { get; set; }
+        public string PartnerId { get; set; }
 
         [Required]
         public decimal PaymentAmount { get; set; }
