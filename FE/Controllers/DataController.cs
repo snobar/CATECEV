@@ -6,9 +6,10 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Mail;
-using System.Net;
 using Microsoft.Extensions.Options;
+using MailKit.Net.Smtp;
+using MimeKit;
+using Humanizer;
 
 namespace CATECEV.FE.Controllers
 {
@@ -29,6 +30,22 @@ namespace CATECEV.FE.Controllers
             _configuration = configuration;
             _protector = provider.CreateProtector("PartnerIdProtector");
             _smtpSettings = smtpOptions.Value;
+        }
+
+        [HttpGet]
+        public IActionResult PrintSmtpConfig()
+        {
+            var configSummary = new
+            {
+                Host = _smtpSettings.Host,
+                Port = _smtpSettings.Port,
+                From = _smtpSettings.From,
+                UserName = _smtpSettings.UserName,
+                UseSSL = _smtpSettings.UseSSL,
+                Alias = _smtpSettings.Alias
+            };
+
+            return Ok(configSummary);
         }
 
         public IActionResult Index()
@@ -311,23 +328,49 @@ namespace CATECEV.FE.Controllers
         }
         private void SendEmail(string toEmail, string subject, string body)
         {
-            using var smtpClient = new SmtpClient(_smtpSettings.Host)
-            {
-                Port = int.Parse(_smtpSettings.Port),
-                Credentials = new NetworkCredential(_smtpSettings.UserName, _smtpSettings.Password),
-                EnableSsl = true // Office365 requires SSL/TLS even if "UseSSL" is false in config
-            };
+            SmtpClient client = new SmtpClient();
+            client.Connect(_smtpSettings.Host, Convert.ToInt32(_smtpSettings.Port), Convert.ToBoolean(_smtpSettings.UseSSL));
 
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress(_smtpSettings.From, _smtpSettings.Alias),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
-            mailMessage.To.Add(toEmail);
+            if (!string.IsNullOrEmpty(_smtpSettings.UserName))
+                client.Authenticate(_smtpSettings.UserName, _smtpSettings.Password);
 
-            smtpClient.Send(mailMessage);
+            BodyBuilder bodyBuilder = new BodyBuilder();
+            bodyBuilder.HtmlBody = body;
+
+            MimeMessage message = new MimeMessage();
+            message.Subject = subject;
+            message.Body = bodyBuilder.ToMessageBody();
+
+
+            message.To.Add(MailboxAddress.Parse(toEmail));
+            message.Cc.Add(MailboxAddress.Parse("RAbuHayah@catec.ae"));
+            message.Cc.Add(MailboxAddress.Parse("SIrshidat@catec.ae"));
+
+            MailboxAddress from = new MailboxAddress(_smtpSettings.Alias, _smtpSettings.From);
+            message.From.Add(from);
+
+            client.Send(message);
+            client.Disconnect(true);
+            client.Dispose();
+
+
+            //using var smtpClient = new SmtpClient(_smtpSettings.Host)
+            //{
+            //    Port = int.Parse(_smtpSettings.Port),
+            //    Credentials = new NetworkCredential(_smtpSettings.UserName, _smtpSettings.Password),
+            //    EnableSsl = true // Office365 requires SSL/TLS even if "UseSSL" is false in config
+            //};
+
+            //var mailMessage = new MailMessage
+            //{
+            //    From = new MailAddress(_smtpSettings.From, _smtpSettings.Alias),
+            //    Subject = subject,
+            //    Body = body,
+            //    IsBodyHtml = true
+            //};
+            //mailMessage.To.Add(toEmail);
+
+            //smtpClient.Send(mailMessage);
         }
 
     }
