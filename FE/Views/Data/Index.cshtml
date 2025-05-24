@@ -39,18 +39,21 @@
                         : item.LastCalculationBalanceDate.ToString("yyyy-MM-dd"))
                 </td>
                 <td>
-                    <a asp-action="Manage" asp-route-id="@item.EncryptedId"
-                       class="btn btn-primary"
-                       style="padding: 2px 6px; font-size: 8px; line-height: 1.2; color:white">
-                        Manage
-                    </a>
+                    <div class="d-flex flex-column flex-sm-row gap-1">
+                        <a asp-action="Manage" asp-route-id="@item.EncryptedId"
+                           class="btn btn-primary flex-fill text-white btn-sm"
+                           style="font-size: 10px;">
+                            Manage
+                        </a>
 
-                    <a asp-controller="Home" asp-action="ViewInfo" asp-route-id="@item.EncryptedId"
-                       class="btn btn-outline-info ms-1"
-                       style="padding: 2px 6px; font-size: 8px; line-height: 1.2;">
-                        View
-                    </a>
+                        <a asp-controller="Home" asp-action="ViewInfo" asp-route-id="@item.EncryptedId"
+                           class="btn btn-outline-info flex-fill btn-sm"
+                           style="font-size: 10px;">
+                            View
+                        </a>
+                    </div>
                 </td>
+
             </tr>
         }
     </tbody>

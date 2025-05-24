@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.DotNet.Scaffolding.Shared;
 using CATECEV.FE.Extensions;
 using CATECEV.Models.Entity.AMPECO.Resources.AmbPartner;
+using Newtonsoft.Json;
 
 namespace CATECEV.FE.Controllers
 {
@@ -32,109 +33,10 @@ namespace CATECEV.FE.Controllers
 
         }
 
+
         public IActionResult Index()
         {
-            var partners = _appContext.Partner.ToList();
-
-            var viewModel = partners.Select(p => new PartnerListItem
-            {
-                Name = p.Name,
-                RegNo = p.RegNo,
-                BalanceAmount = p.BalanceAmount,
-                LastCalculationBalanceDate = p.LastCalculationBalanceDate,
-                EncryptedId = ShortEncryptor.Encrypt(p.Id)
-            }).ToList();
-
-            return View(viewModel);
-        }
-
-        public async Task<IActionResult> Manage(string id)
-        {
-            int partnerId;
-            try
-            {
-                partnerId = ShortEncryptor.Decrypt(id);
-            }
-            catch
-            {
-                return BadRequest("Invalid or tampered ID");
-            }
-
-            await GetPartnerExpense(partnerId);
-
-            var payments = _appContext.PartnerPayment
-                .Include(p => p.Partner)
-                .Where(x => x.PartnerId == partnerId)
-                .Select(p => new PartnerPaymentViewModel
-                {
-                    Id = p.Id,
-                    PartnerId = ShortEncryptor.Encrypt(p.PartnerId),
-                    PartnerName = p.Partner.Name,
-                    PaymentAmount = p.PaymentAmount,
-                    PaymentDate = p.PaymentDate
-                }).ToList();
-
-            // Fetch the selected partner
-            var selectedPartner = _appContext.Partner.FirstOrDefault(p => p.Id == partnerId);
-
-            var model = new PartnerPaymentPageViewModel
-            {
-                NewPayment = new PartnerPaymentViewModel
-                {
-                    PartnerId = ShortEncryptor.Encrypt(partnerId),
-                    PaymentDate = DateTime.Today
-                },
-                Payments = payments,
-                Partners = _appContext.Partner.Select(p => new SelectListItem
-                {
-                    Value = p.Id.ToString(),
-                    Text = p.Name
-                }).ToList(),
-                SelectedPartner = selectedPartner // ← here’s the important addition
-            };
-
-            return View(model);
-
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Manage(PartnerPaymentPageViewModel model)
-        {
-
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return Json(new { success = false, errors });
-            }
-            int partnerId = ShortEncryptor.Decrypt(model.NewPayment.PartnerId);
-            var payment = new PartnerPayment
-            {
-                PartnerId = partnerId,
-                PaymentAmount = model.NewPayment.PaymentAmount,
-                PaymentDate = model.NewPayment.PaymentDate
-            };
-
-            _appContext.PartnerPayment.Add(payment);
-
-            var partnerdata = _appContext.Partner.FirstOrDefault(x => x.Id == partnerId);
-            partnerdata.BalanceAmount += model.NewPayment.PaymentAmount;
-            _appContext.Partner.Update(partnerdata);
-
-            _appContext.SaveChanges();
-            await GetPartnerExpense(partnerId);
-
-            var partnerName = _appContext.Partner.Find(partnerId)?.Name;
-
-            return Json(new
-            {
-                success = true,
-                row = new
-                {
-                    partnerName,
-                    model.NewPayment.PaymentAmount,
-                    date = model.NewPayment.PaymentDate.ToShortDateString()
-                }
-            });
+            return View();
         }
 
         [HttpGet]
@@ -142,7 +44,7 @@ namespace CATECEV.FE.Controllers
         {
             int partnerId = ShortEncryptor.Decrypt(id);
 
-            await GetPartnerExpense(partnerId);
+            await GetPartnerExpense(partnerId, false);
 
             var partner = _appContext.Partner.FirstOrDefault(p => p.Id == partnerId);
             if (partner == null)
@@ -171,9 +73,22 @@ namespace CATECEV.FE.Controllers
             {
                 return BadRequest("Invalid or tampered ID");
             }
-            await GetPartnerExpense(partnerId);
+            var expenses = await GetPartnerExpense(partnerId, true);
 
             var selectedPartner = _appContext.Partner.FirstOrDefault(p => p.Id == partnerId);
+
+            var payments = _appContext.PartnerPayment
+                       .Include(p => p.Partner)
+                       .Where(x => x.PartnerId == partnerId)
+                       .OrderByDescending(x => x.CreatedOn)
+                       .Select(p => new PartnerPaymentViewModel
+                       {
+                           Id = p.Id,
+                           PartnerId = ShortEncryptor.Encrypt(p.PartnerId),
+                           PartnerName = p.Partner.Name,
+                           PaymentAmount = p.PaymentAmount,
+                           PaymentDate = p.PaymentDate
+                       }).ToList();
 
             var model = new PartnerPaymentPageViewModel
             {
@@ -187,18 +102,28 @@ namespace CATECEV.FE.Controllers
                     Value = p.Id.ToString(),
                     Text = p.Name
                 }).ToList(),
-                SelectedPartner = selectedPartner // ← here’s the important addition
+                SelectedPartner = new SelectedPartnerViewModel
+                {
+                    Id = selectedPartner.Id,
+                    Name = selectedPartner.Name,
+                    RegNo = selectedPartner.RegNo,
+                    BalanceAmount = selectedPartner.BalanceAmount,
+                    LastCalculationBalanceDate = selectedPartner.LastCalculationBalanceDate,
+                    Email = selectedPartner.Email,
+                    Mobile = selectedPartner.Phone
+                },
+                PartnerExpenses = expenses,
+                PartnerPayments = payments
             };
 
             return View(model);
         }
 
 
-        private async Task GetPartnerExpense(int partnerId)
+        private async Task<List<AMPECOPartnerExpenseViewModel>> GetPartnerExpense(int partnerId, bool showAllExpenses)
         {
-
             string baseUrl = _configuration["ServiceEndpoints:AmpecoApi"];
-            string url = $"{baseUrl}/AmbecoPartnerExpenseData?partnerId={partnerId}";
+            string url = $"{baseUrl}/AmbecoPartnerExpenseData?partnerId={partnerId}&showAllExpenses={showAllExpenses}";
 
             var client = _httpClientFactory.CreateClient();
 
@@ -207,18 +132,18 @@ namespace CATECEV.FE.Controllers
                 var response = await client.GetAsync(url);
                 if (!response.IsSuccessStatusCode)
                 {
-                    // Optional: log or throw error
                     ViewBag.ApiError = $"API call failed: {response.StatusCode}";
+                    return new List<AMPECOPartnerExpenseViewModel>();
                 }
-                else
-                {
-                    // Optionally read result here if API returns data
-                    // var result = await response.Content.ReadAsStringAsync();
-                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var expenses = JsonConvert.DeserializeObject<List<AMPECOPartnerExpenseViewModel>>(json);
+                return expenses ?? new List<AMPECOPartnerExpenseViewModel>();
             }
             catch (Exception ex)
             {
                 ViewBag.ApiError = $"Exception: {ex.Message}";
+                return new List<AMPECOPartnerExpenseViewModel>();
             }
         }
 

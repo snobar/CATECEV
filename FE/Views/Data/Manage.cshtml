@@ -2,89 +2,151 @@
 @model PartnerPaymentPageViewModel
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(function () {
-         $('#paymentForm').submit(function (e) {
-            e.preventDefault();
-            $('.text-danger').text(''); // clear previous errors
 
-            const amount = parseFloat($('#NewPayment_PaymentAmount').val());
 
-            if (isNaN(amount) || amount === 0) {
-                $('#amountValidationMsg').text('Payment amount must be greater than zero.');
-                return;
-            }
+        <script>
+                    $(document).ready(function () {
+                var table = $('#transactionsTable').DataTable({
+                pageLength: 25,
+                order: [[0, 'desc']],
+                dom: 'lrtip',
+                responsive: true,
+                autoWidth: false
+            });
 
-            $.ajax({
-                url: '@Url.Action("Manage", "Data")',
-                type: 'POST',
-                data: $(this).serialize(),
-                success: function (res) {
-                    if (res.success) {
-                        location.reload(); // Reloads the entire page
-                    } else {
-                        res.errors.forEach(function (msg, i) {
-                            $(`.field-validation-error:eq(${i})`).text(msg);
-                        });
-                    }
+            // Add custom filter for date range
+            $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+                var start = $('#dateRange').data('start');
+                var end = $('#dateRange').data('end');
+                var date = data[0]; // date column
+
+                if (!start || !end) return true;
+                return date >= start && date <= end;
+            });
+
+            // Initialize daterangepicker
+            $('#dateRange').daterangepicker({
+                autoUpdateInput: false,
+                locale: {
+                    cancelLabel: 'Clear',
+                    format: 'YYYY-MM-DD'
                 }
             });
-        });
 
-        });
-
-        $('#refreshBalanceBtn').click(function () {
-            var $icon = $(this).find('i');
-            $icon.addClass('fa-spin');
-            $('#refreshSuccessMsg').hide(); // hide before reloading
-
-            $.ajax({
-                url: '@Url.Action("RefreshBalance", "Data")',
-                type: 'GET',
-                data: { id: '@Model.NewPayment.PartnerId' },
-                success: function (res) {
-                    $icon.removeClass('fa-spin');
-                    if (res.success) {
-                        $('#balanceAmountText').text(res.newBalance);
-                        $('#refreshSuccessMsg').fadeIn().delay(2000).fadeOut(); // show for 2s
-                    } else {
-                        alert("Failed to refresh balance.");
-                    }
-                },
-                error: function () {
-                    $icon.removeClass('fa-spin');
-                    alert("Error contacting server.");
-                }
+            $('#dateRange').on('apply.daterangepicker', function (ev, picker) {
+                var start = picker.startDate.format('YYYY-MM-DD');
+                var end = picker.endDate.format('YYYY-MM-DD');
+                $(this).val(`${start} - ${end}`);
+                $(this).data('start', start);
+                $(this).data('end', end);
+                table.draw();
             });
-        });
+
+            $('#dateRange').on('cancel.daterangepicker', function () {
+                $(this).val('');
+                $(this).data('start', null);
+                $(this).data('end', null);
+                table.draw();
+            });
+
+            });
+            $(function () {
+                  $('#paymentForm').submit(function (e) {
+                e.preventDefault();
+                $('.text-danger').text(''); // clear previous errors
+
+                const amount = parseFloat($('#NewPayment_PaymentAmount').val());
+
+                if (isNaN(amount) || amount === 0) {
+                    $('#amountValidationMsg').text('Payment amount must be greater than zero.');
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("Manage", "Data")',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function (res) {
+                        if (res.success) {
+                            const rowHtml = `
+                                <tr class="table-success">
+                                    <td>${res.row.date}</td>
+                                    <td>${res.row.paymentAmount.toFixed(2)}</td>
+                                </tr>`;
+                            $('table tbody').prepend(rowHtml);
+
+                            // Reset fields
+                            $('#NewPayment_PaymentAmount').val('');
+                            $('#NewPayment_PaymentDate').val(new Date().toISOString().split('T')[0]);
+
+                            // Remove highlight after 2s
+                            setTimeout(() => {
+                                $('table tbody tr:first').removeClass('table-success');
+                            }, 2000);
+                        } else {
+                            res.errors.forEach(function (msg, i) {
+                                $(`.field-validation-error:eq(${i})`).text(msg);
+                            });
+                        }
+                    }
+                });
+            });
+
+            });
+
+            $('#refreshBalanceBtn').click(function () {
+                var $icon = $(this).find('i');
+                $icon.addClass('fa-spin');
+                $('#refreshSuccessMsg').hide(); // hide before reloading
+
+                $.ajax({
+                    url: '@Url.Action("RefreshBalance", "Data")',
+                    type: 'GET',
+                    data: { id: '@Model.NewPayment.PartnerId' },
+                    success: function (res) {
+                        $icon.removeClass('fa-spin');
+                        if (res.success) {
+                            $('#balanceAmountText').text(res.newBalance);
+                            $('#refreshSuccessMsg').fadeIn().delay(2000).fadeOut(); // show for 2s
+                            location.reload(); // Reloads the entire page
+
+                        } else {
+                            alert("Failed to refresh balance.");
+                        }
+                    },
+                    error: function () {
+                        $icon.removeClass('fa-spin');
+                        alert("Error contacting server.");
+                    }
+                });
+            });
 
                 $('#sendEmailBtn').click(function () {
-            var $icon = $(this).find('i');
-            $icon.addClass('fa-spin');
-            $('#emailSuccessMsg').hide();
+                var $icon = $(this).find('i');
+                $icon.addClass('fa-spin');
+                $('#emailSuccessMsg').hide();
 
-            $.ajax({
-                url: '@Url.Action("SendBalanceEmail", "Data")',
-                type: 'POST',
-                data: { id: '@Model.NewPayment.PartnerId' },
-                success: function (res) {
-                    $icon.removeClass('fa-spin');
-                    if (res.success) {
-                        $('#emailSuccessMsg').fadeIn().delay(2000).fadeOut();
-                    } else {
-                        alert("Failed to send email.");
+                $.ajax({
+                    url: '@Url.Action("SendBalanceEmail", "Data")',
+                    type: 'POST',
+                    data: { id: '@Model.NewPayment.PartnerId' },
+                    success: function (res) {
+                        $icon.removeClass('fa-spin');
+                        if (res.success) {
+                            $('#emailSuccessMsg').fadeIn().delay(2000).fadeOut();
+                        } else {
+                            alert("Failed to send email.");
+                        }
+                    },
+                    error: function () {
+                        $icon.removeClass('fa-spin');
+                        alert("Error contacting server.");
                     }
-                },
-                error: function () {
-                    $icon.removeClass('fa-spin');
-                    alert("Error contacting server.");
-                }
+                });
             });
-        });
 
 
-    </script>
+        </script>
 }
 
 <style>
@@ -97,6 +159,26 @@
     .btn {
         font-size: 12px !important;
     }
+
+
+    #dateRange {
+        font-size: 12px;
+        padding: 4px 8px;
+        height: 34px;
+    }
+
+    .daterangepicker {
+        font-size: 12px !important;
+    }
+
+        .daterangepicker .calendar-table {
+            font-size: 12px !important;
+        }
+
+        .daterangepicker .ranges li {
+            padding: 4px 6px !important;
+        }
+
 </style>
 <div class="mb-3">
     <a asp-action="Index" asp-controller="Data" class="btn btn-secondary">
@@ -106,74 +188,171 @@
 
 @if (Model.SelectedPartner != null)
 {
-    <div class="mb-4 border p-3 rounded bg-light">
-        <h6>Partner Information</h6>
-        <dl class="row mb-0">
-            <dt class="col-sm-3">Name</dt>
-            <dd class="col-sm-9">@Model.SelectedPartner.Name</dd>
+        <div class="mb-4 border p-3 rounded bg-white pt-4">
 
-            <dt class="col-sm-3">Reg No</dt>
-            <dd class="col-sm-9">@Model.SelectedPartner.RegNo</dd>
+            <form asp-action="UpdatePartnerBalance" method="post" class="row g-3">
+            @* Hidden Partner ID *@
+                <input type="hidden" name="Id" value="@Model.SelectedPartner.Id" />
 
-            <dt class="col-sm-3">Balance Amount</dt>
-            <dd class="col-sm-9">
-                <div class="d-flex align-items-center">
-                    <span id="balanceAmountText">@Model.SelectedPartner.BalanceAmount.ToString()</span>
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Name</dt>
+                    <dd class="col-sm-9">@Model.SelectedPartner.Name</dd>
 
-                    <button id="refreshBalanceBtn" class="btn btn-outline-secondary btn-sm ms-2" type="button" title="Refresh Amount Balance">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
+                    <dt class="col-sm-3">Reg No</dt>
+                    <dd class="col-sm-9">@Model.SelectedPartner.RegNo</dd>
 
-                    <button id="sendEmailBtn" class="btn btn-outline-primary btn-sm ms-2" type="button" title="Send Balance Email">
-                        <i class="fas fa-envelope"></i>
-                    </button>
+                    <dt class="col-sm-3">Balance Amount</dt>
+                    <dd class="col-sm-9">
+                        <div class="d-flex align-items-center">
+                            <input type="number" step="0.01" name="BalanceAmount" class="form-control form-control-sm w-auto" value="@Model.SelectedPartner.BalanceAmount" />
 
-                    <span id="refreshSuccessMsg" class="ms-2 text-success fw-bold" style="display:none;">✔ Refreshed</span>
-                    <span id="emailSuccessMsg" class="ms-2 text-success fw-bold" style="display:none;">📧 Sent</span>
+                            <button id="refreshBalanceBtn" class="btn btn-outline-secondary btn-sm ms-2" type="button" title="Refresh Amount Balance">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+
+                            <button id="sendEmailBtn" class="btn btn-outline-primary btn-sm ms-2" type="button" title="Send Balance Email">
+                                <i class="fas fa-envelope"></i>
+                            </button>
+
+                            <span id="refreshSuccessMsg" class="ms-2 text-success fw-bold" style="display:none;">✔ Refreshed</span>
+                            <span id="emailSuccessMsg" class="ms-2 text-success fw-bold" style="display:none;">📧 Sent</span>
+                        </div>
+                    </dd>
+
+                    <dt class="col-sm-3">As of</dt>
+                    <dd class="col-sm-9">
+                        <input type="date" name="LastCalculationBalanceDate" class="form-control form-control-sm w-auto"
+                               value="@Model.SelectedPartner.LastCalculationBalanceDate?.ToString("yyyy-MM-dd")" />
+                    </dd>
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">
+                    <input type="email" name="Email" class="form-control form-control-sm w-auto" value="@Model.SelectedPartner.Email" />
+                </dd>
+
+                <dt class="col-sm-3">Mobile</dt>
+                <dd class="col-sm-9">
+                    <input type="tel" name="Mobile" class="form-control form-control-sm w-auto" value="@Model.SelectedPartner.Mobile" />
+                </dd>
+
+                </dl>
+
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-success btn-sm">Update Info</button>
                 </div>
-            </dd>
-
-        </dl>
-    </div>
+            @if (TempData["SuccessMsg"] != null)
+            {
+                        <div class="alert alert-success">@TempData["SuccessMsg"]</div>
+            }
+            </form>
+        </div>
 }
 
-@using (Html.BeginForm("Manage", "Data", FormMethod.Post, new { @id = "paymentForm", @class = "d-flex flex-wrap align-items-end gap-2 mb-4" }))
-{
-    @Html.HiddenFor(m => m.NewPayment.PartnerId)
+<ul class="nav nav-tabs" id="infoTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">Payments</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="balance-tab" data-bs-toggle="tab" data-bs-target="#balance" type="button" role="tab">Transactions</button>
+    </li>
 
-    <div>
-        @Html.LabelFor(m => m.NewPayment.PaymentAmount, new { @class = "form-label" })
-        @Html.TextBoxFor(m => m.NewPayment.PaymentAmount, new { @class = "form-control", type = "number", step = "0.01" })
-        <span class="text-danger" id="amountValidationMsg"></span>
+</ul>
 
-    </div>
-    <div>
-        @Html.LabelFor(m => m.NewPayment.PaymentDate, new { @class = "form-label" })
-        @Html.TextBoxFor(m => m.NewPayment.PaymentDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
-    </div>
-    <div>
-        <label class="form-label d-block">&nbsp;</label>
-        <button type="submit" class="btn btn-primary">Add</button>
-    </div>
-}
+<div class="tab-content mt-3" id="infoTabsContent">
+    <!-- Payments Tab -->
+    <div class="tab-pane fade  show active" id="payments" role="tabpanel" aria-labelledby="payments-tab">
 
-<hr />
-
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Payment</th>
-            <th>Date</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model.Payments)
+        @using (Html.BeginForm("Manage", "Data", FormMethod.Post, new { @id = "paymentForm", @class = "d-flex flex-wrap align-items-end gap-2 mb-4" }))
         {
-            <tr>
-                <td>@item.PaymentAmount</td>
-                <td>@item.PaymentDate.ToShortDateString()</td>
-            </tr>
+            @Html.HiddenFor(m => m.NewPayment.PartnerId)
+
+                <div>
+                @Html.LabelFor(m => m.NewPayment.PaymentAmount, "Payment Amount", new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.NewPayment.PaymentAmount, new { @class = "form-control", type = "number", step = "0.01" })
+                    <span class="text-danger" id="amountValidationMsg"></span>
+
+                </div>
+                <div>
+                @Html.LabelFor(m => m.NewPayment.PaymentDate, "Payment Date", new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.NewPayment.PaymentDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                </div>
+                <div>
+                    <label class="form-label d-block">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
         }
-    </tbody>
-</table>
+
+        <hr />
+        @if (Model.PartnerPayments?.Any() == true)
+        {
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr>
+                            <th>Payment Date</th>
+                            <th>Payment Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var payment in Model.PartnerPayments)
+                    {
+                                <tr>
+                                    <td>@payment.PaymentDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@payment.PaymentAmount</td>
+                                </tr>
+                    }
+                    </tbody>
+                </table>
+        }
+        else
+        {
+                <p>No payments found.</p>
+        }
+    </div>
+    <!-- Balance Tab -->
+    <div class="tab-pane fade" id="balance" role="tabpanel" aria-labelledby="balance-tab">
+        @* Existing balance/partner info UI *@
+        <h6>Transactions Basket</h6>
+        @if (Model.PartnerExpenses?.Any() == true)
+        {
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="dateRange" class="form-label">Filter by Date Range</label>
+                        <input type="text" id="dateRange" class="form-control form-control-sm w-100" placeholder="Select date range" />
+                    </div>
+                </div>
+                <div class="table-responsive">
+                <table id="transactionsTable" class="table table-sm table-bordered w-100">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Charge Point</th>
+                            <th>Duration</th>
+                            <th>Total (Excl. Tax)</th>
+                            <th>Currency</th>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.PartnerExpenses)
+                        {
+                                <tr>
+                                    <td>@item.Date.ToString("yyyy-MM-dd")</td>
+                                    <td>@item.ChargePointName</td>
+                                    <td>@item.Duration</td>
+                                    <td>@item.TotalAmount.WithoutTax</td>
+                                    <td>@item.CurrencyCode</td>
+                                </tr>
+                        }
+                    </tbody>
+                </table>
+                </div>
+        }
+        else
+        {
+                <p>No basket data found.</p>
+        }
+    </div>
+
+
+</div>
+
+
+
 

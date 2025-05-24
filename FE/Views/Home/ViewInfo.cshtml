@@ -2,8 +2,52 @@
 @model PartnerPaymentPageViewModel
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+              $(document).ready(function () {
+            var table = $('#transactionsTable').DataTable({
+            pageLength: 25,
+            order: [[0, 'desc']],
+            dom: 'lrtip',
+            responsive: true,
+            autoWidth: false
+        });
+
+        // Add custom filter for date range
+        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+            var start = $('#dateRange').data('start');
+            var end = $('#dateRange').data('end');
+            var date = data[0]; // date column
+
+            if (!start || !end) return true;
+            return date >= start && date <= end;
+        });
+
+        // Initialize daterangepicker
+        $('#dateRange').daterangepicker({
+            autoUpdateInput: false,
+            locale: {
+                cancelLabel: 'Clear',
+                format: 'YYYY-MM-DD'
+            }
+        });
+
+        $('#dateRange').on('apply.daterangepicker', function (ev, picker) {
+            var start = picker.startDate.format('YYYY-MM-DD');
+            var end = picker.endDate.format('YYYY-MM-DD');
+            $(this).val(`${start} - ${end}`);
+            $(this).data('start', start);
+            $(this).data('end', end);
+            table.draw();
+        });
+
+        $('#dateRange').on('cancel.daterangepicker', function () {
+            $(this).val('');
+            $(this).data('start', null);
+            $(this).data('end', null);
+            table.draw();
+        });
+
+        });
         $('#refreshBalanceBtn').click(function () {
             var $icon = $(this).find('i');
             $icon.addClass('fa-spin');
@@ -18,6 +62,8 @@
                     if (res.success) {
                         $('#balanceAmountText').text(res.newBalance);
                         $('#refreshSuccessMsg').fadeIn().delay(2000).fadeOut(); // show for 2s
+                         location.reload(); // Reloads the entire page
+
                     } else {
                         alert("Failed to refresh balance.");
                     }
@@ -43,11 +89,30 @@
     .btn {
         font-size: 12px !important;
     }
+
+    #dateRange {
+        font-size: 12px;
+        padding: 4px 8px;
+        height: 34px;
+    }
+
+    .daterangepicker {
+        font-size: 12px !important;
+    }
+
+        .daterangepicker .calendar-table {
+            font-size: 12px !important;
+        }
+
+        .daterangepicker .ranges li {
+            padding: 4px 6px !important;
+        }
+
 </style>
 
 @if (Model.SelectedPartner != null)
 {
-    <div class="mb-4 border p-3 rounded bg-light">
+    <div class="mb-4 border p-3 rounded bg-white  pt-4">
         <h6>Partner Information</h6>
         <dl class="row mb-0">
             <dt class="col-sm-3">Name</dt>
@@ -68,7 +133,101 @@
                     <span id="refreshSuccessMsg" class="ms-2 text-success fw-bold" style="display:none;">✔ Refreshed</span>
                 </div>
             </dd>
-
+            <dt class="col-sm-3">As of</dt>
+            <dd class="col-sm-9">@Model.SelectedPartner.LastCalculationBalanceDate</dd>
+            <dt class="col-sm-3">Email</dt>
+             <dd class="col-sm-9">@Model.SelectedPartner.Email</dd>
+              <dt class="col-sm-3">Mobile</dt>
+                 <dd class="col-sm-9">@Model.SelectedPartner.Mobile</dd>
         </dl>
     </div>
+
+    <ul class="nav nav-tabs" id="infoTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">Payments</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="balance-tab" data-bs-toggle="tab" data-bs-target="#balance" type="button" role="tab">Transactions</button>
+        </li>
+
+    </ul>
+
+
+
+    <div class="tab-content mt-3" id="infoTabsContent">
+        <!-- Payments Tab -->
+        <div class="tab-pane fade  show active" id="payments" role="tabpanel" aria-labelledby="payments-tab">
+            @if (Model.PartnerPayments?.Any() == true)
+            {
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr>
+                            <th>Payment Date</th>
+                            <th>Payment Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in Model.PartnerPayments)
+                        {
+                            <tr>
+                                <td>@payment.PaymentDate.ToString("yyyy-MM-dd")</td>
+                                <td>@payment.PaymentAmount</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p>No payments found.</p>
+            }
+        </div>
+
+        <!-- Balance Tab -->
+        <div class="tab-pane fade" id="balance" role="tabpanel" aria-labelledby="balance-tab">
+     
+            @if (Model.PartnerExpenses?.Any() == true)
+            {
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="dateRange" class="form-label">Filter by Date Range</label>
+                        <input type="text" id="dateRange" class="form-control form-control-sm w-100" placeholder="Select date range" />
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="transactionsTable" class="table table-sm table-bordered w-100">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Charge Point</th>
+                                <th>Duration</th>
+                                <th>Total (Excl. Tax)</th>
+                                <th>Currency</th>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.PartnerExpenses)
+                            {
+                                <tr>
+                                    <td>@item.Date.ToString("yyyy-MM-dd")</td>
+                                    <td>@item.ChargePointName</td>
+                                    <td>@item.Duration</td>
+                                    <td>@item.TotalAmount.WithoutTax</td>
+                                    <td>@item.CurrencyCode</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p>No basket data found.</p>
+            }
+        </div>
+
+
+    </div>
+
+
+
 }

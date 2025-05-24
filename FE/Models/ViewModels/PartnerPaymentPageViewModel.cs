@@ -10,7 +10,9 @@ namespace CATECEV.FE.Models.ViewModels
         public List<SelectListItem> Partners { get; set; }
         public List<PartnerPaymentViewModel> Payments { get; set; }
 
-        public Partner SelectedPartner { get; set; } // Add this
+        public SelectedPartnerViewModel SelectedPartner { get; set; }
+        public List<AMPECOPartnerExpenseViewModel> PartnerExpenses { get; set; }
+        public List<PartnerPaymentViewModel> PartnerPayments { get; set; }
     }
 
 }

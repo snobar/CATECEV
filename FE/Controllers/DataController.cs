@@ -10,6 +10,8 @@ using Microsoft.Extensions.Options;
 using MailKit.Net.Smtp;
 using MimeKit;
 using Humanizer;
+using System.Net.Http;
+using Newtonsoft.Json;
 
 namespace CATECEV.FE.Controllers
 {
@@ -76,11 +78,12 @@ namespace CATECEV.FE.Controllers
                 return BadRequest("Invalid or tampered ID");
             }
 
-            await GetPartnerExpense(partnerId);
+            var expenses = await GetPartnerExpense(partnerId, true);
 
             var payments = _appContext.PartnerPayment
                 .Include(p => p.Partner)
                 .Where(x => x.PartnerId == partnerId)
+                .OrderByDescending(x => x.CreatedOn)
                 .Select(p => new PartnerPaymentViewModel
                 {
                     Id = p.Id,
@@ -106,11 +109,21 @@ namespace CATECEV.FE.Controllers
                     Value = p.Id.ToString(),
                     Text = p.Name
                 }).ToList(),
-                SelectedPartner = selectedPartner // ← here’s the important addition
+                SelectedPartner  = new SelectedPartnerViewModel
+                {
+                    Id = selectedPartner.Id,
+                    Name = selectedPartner.Name,
+                    RegNo = selectedPartner.RegNo,
+                    BalanceAmount = selectedPartner.BalanceAmount,
+                    LastCalculationBalanceDate = selectedPartner.LastCalculationBalanceDate,
+                    Email = selectedPartner.Email,
+                    Mobile = selectedPartner.Phone
+                },
+                PartnerExpenses = expenses,
+                PartnerPayments = payments
             };
 
             return View(model);
-
         }
 
         [HttpPost]
@@ -127,7 +140,8 @@ namespace CATECEV.FE.Controllers
             {
                 PartnerId = partnerId,
                 PaymentAmount = model.NewPayment.PaymentAmount,
-                PaymentDate = model.NewPayment.PaymentDate
+                PaymentDate = model.NewPayment.PaymentDate,
+                CreatedOn = DateTime.Now
             };
 
             _appContext.PartnerPayment.Add(payment);
@@ -137,7 +151,7 @@ namespace CATECEV.FE.Controllers
             _appContext.Partner.Update(partnerdata);
 
             _appContext.SaveChanges();
-            await GetPartnerExpense(partnerId);
+            await GetPartnerExpense(partnerId, true);
 
             var partnerName = _appContext.Partner.Find(partnerId)?.Name;
 
@@ -147,18 +161,36 @@ namespace CATECEV.FE.Controllers
                 row = new
                 {
                     partnerName,
-                    model.NewPayment.PaymentAmount,
+                    paymentAmount = model.NewPayment.PaymentAmount,
                     date = model.NewPayment.PaymentDate.ToShortDateString()
                 }
             });
         }
+
+        [HttpPost]
+        public IActionResult UpdatePartnerBalance(SelectedPartnerViewModel model)
+        {
+            var partner = _appContext.Partner.FirstOrDefault(p => p.Id == model.Id);
+            if (partner == null)
+                return NotFound();
+
+            partner.BalanceAmount = model.BalanceAmount;
+            partner.LastCalculationBalanceDate = model.LastCalculationBalanceDate.Value;
+            partner.Email = model.Email;
+            partner.Phone = model.Mobile;
+            _appContext.SaveChanges();
+
+            TempData["SuccessMsg"] = "Partner balance updated successfully.";
+            return RedirectToAction("Manage", new { id = ShortEncryptor.Encrypt(model.Id) });
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> RefreshBalance(string id)
         {
             int partnerId = ShortEncryptor.Decrypt(id);
 
-            await GetPartnerExpense(partnerId);
+            await GetPartnerExpense(partnerId, false);
 
             var partner = _appContext.Partner.FirstOrDefault(p => p.Id == partnerId);
             if (partner == null)
@@ -176,37 +208,11 @@ namespace CATECEV.FE.Controllers
             });
         }
 
-        public async Task<IActionResult> ViewInfo(string id)
+        [HttpGet]
+        public async Task<IActionResult> LoadPartnerBasket(int partnerId)
         {
-            int partnerId;
-            try
-            {
-                partnerId = ShortEncryptor.Decrypt(id);
-            }
-            catch
-            {
-                return BadRequest("Invalid or tampered ID");
-            }
-            await GetPartnerExpense(partnerId);
-
-            var selectedPartner = _appContext.Partner.FirstOrDefault(p => p.Id == partnerId);
-
-            var model = new PartnerPaymentPageViewModel
-            {
-                NewPayment = new PartnerPaymentViewModel
-                {
-                    PartnerId = ShortEncryptor.Encrypt(partnerId),
-                    PaymentDate = DateTime.Today
-                },
-                Partners = _appContext.Partner.Select(p => new SelectListItem
-                {
-                    Value = p.Id.ToString(),
-                    Text = p.Name
-                }).ToList(),
-                SelectedPartner = selectedPartner // ← here’s the important addition
-            };
-
-            return View(model);
+            var expenses = await GetPartnerExpense(partnerId, false);
+            return PartialView("_PartnerExpensesPartial", expenses);
         }
 
         [HttpPost]
@@ -270,7 +276,7 @@ namespace CATECEV.FE.Controllers
     <p>Your current balance information is as follows:</p>
 
     <p>Balance Amount: <span class='highlight'>{partner.BalanceAmount}</span></p>
-    <p>Last Calculation Date: {partner.LastCalculationBalanceDate:yyyy-MM-dd HH:mm}</p>
+    <p>As of: {partner.LastCalculationBalanceDate:yyyy-MM-dd HH:mm}</p>
 
     <p>Thank you for using <strong>CATEC</strong>.</p>
 
@@ -280,7 +286,7 @@ namespace CATECEV.FE.Controllers
     </p>
 
     <div class='footer'>
-      CATEC System • <a href='https://www.catec.ae'>www.catec.ae</a>
+      For any support: <a href=""mailto:support@shabik.ae"">support@shabik.ae</a>
     </div>
   </div>
 </body>
@@ -299,11 +305,10 @@ namespace CATECEV.FE.Controllers
                 return Json(new { success = false, message = ex.Message });
             }
         }
-        private async Task GetPartnerExpense(int partnerId)
+        private async Task<List<AMPECOPartnerExpenseViewModel>> GetPartnerExpense(int partnerId, bool showAllExpenses)
         {
-
             string baseUrl = _configuration["ServiceEndpoints:AmpecoApi"];
-            string url = $"{baseUrl}/AmbecoPartnerExpenseData?partnerId={partnerId}";
+            string url = $"{baseUrl}/AmbecoPartnerExpenseData?partnerId={partnerId}&showAllExpenses={showAllExpenses}";
 
             var client = _httpClientFactory.CreateClient();
 
@@ -312,20 +317,21 @@ namespace CATECEV.FE.Controllers
                 var response = await client.GetAsync(url);
                 if (!response.IsSuccessStatusCode)
                 {
-                    // Optional: log or throw error
                     ViewBag.ApiError = $"API call failed: {response.StatusCode}";
+                    return new List<AMPECOPartnerExpenseViewModel>();
                 }
-                else
-                {
-                    // Optionally read result here if API returns data
-                    // var result = await response.Content.ReadAsStringAsync();
-                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var expenses = JsonConvert.DeserializeObject<List<AMPECOPartnerExpenseViewModel>>(json);
+                return expenses ?? new List<AMPECOPartnerExpenseViewModel>();
             }
             catch (Exception ex)
             {
                 ViewBag.ApiError = $"Exception: {ex.Message}";
+                return new List<AMPECOPartnerExpenseViewModel>();
             }
         }
+
         private void SendEmail(string toEmail, string subject, string body)
         {
             SmtpClient client = new SmtpClient();

@@ -435,7 +435,7 @@ namespace CATECEV.API.Controllers
         }
 
         [HttpGet("AmbecoPartnerExpenseData")]
-        public async Task<IActionResult> AmbecoPartnerExpenseData(int partnerId)
+        public async Task<IActionResult> AmbecoPartnerExpenseData(int partnerId, bool showAllExpenses)
         {
             try
             {
@@ -443,22 +443,24 @@ namespace CATECEV.API.Controllers
                 var apiService = new ApiService(httpClient);
 
                 var selectedPartner = _appContext.Partner.FirstOrDefault(x => x.Id == partnerId);
-                if (selectedPartner != null && selectedPartner.LastCalculationBalanceDate == DateTime.MinValue)
+                if (selectedPartner != null && (selectedPartner.LastCalculationBalanceDate == DateTime.MinValue || showAllExpenses))
                 {
-                    selectedPartner.LastCalculationBalanceDate = DateTime.Now;
+                    selectedPartner.LastCalculationBalanceDate = showAllExpenses ? DateTime.Now.AddYears(-5) : DateTime.Now;
                 }
+               
                 string initialUrl = $"https://shabikuae.eu.charge.ampeco.tech/public-api/resources/partner-expenses/v1.1?filter[partnerId]={selectedPartner.AMPECOId}&filter[dateBefore]={DateTime.Now}&filter[dateAfter]={selectedPartner.LastCalculationBalanceDate}";
 
                 List<AMPECOPartnerExpense> allReports = await apiService.GetAllPaginatedDataAsync<AMPECOPartnerExpense>(initialUrl, _token);
+                if (!showAllExpenses)
+                {
+                    decimal totalWithoutTax = allReports.Sum(r => r.TotalAmount?.WithoutTax ?? 0);
 
-                decimal totalWithoutTax = allReports.Sum(r => r.TotalAmount?.WithoutTax ?? 0);
-
-                selectedPartner.LastCalculationBalanceDate = DateTime.Now;
-                selectedPartner.BalanceAmount -= totalWithoutTax;
-                _appContext.Partner.Update(selectedPartner);
-                await _appContext.SaveChangesAsync();
-
-                return Ok();
+                    selectedPartner.LastCalculationBalanceDate = DateTime.Now;
+                    selectedPartner.BalanceAmount -= totalWithoutTax;
+                    _appContext.Partner.Update(selectedPartner);
+                    await _appContext.SaveChangesAsync();
+                }
+                return Ok(allReports);
             }
             catch (Exception ex)
             {
