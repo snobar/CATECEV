@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using CATECEV.API.Helper;
 using CATECEV.API.Helper.IService;
+using CATECEV.API.Models;
 using CATECEV.API.Models.AMPECO.resource.Partner;
 using CATECEV.API.Models.AMPECO.resource.PartnerExpenses;
 using CATECEV.API.Models.Reports.Sessions;
@@ -9,6 +11,7 @@ using CATECEV.CORE.Logger;
 using CATECEV.CORE.model;
 using CATECEV.CORE.Wrapper;
 using CATECEV.Data.Context;
+using CATECEV.Models.Entity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
@@ -439,42 +442,89 @@ namespace CATECEV.API.Controllers
         {
             try
             {
-                var httpClient = new HttpClient();
+                var httpClient = new HttpClient
+                {
+                    BaseAddress = new Uri("https://shabikuae.eu.charge.ampeco.tech")
+                };
                 var apiService = new ApiService(httpClient);
 
-                var selectedPartner = _appContext.Partner.FirstOrDefault(x => x.Id == partnerId);
-                if (selectedPartner != null)
-                {
-                    selectedPartner.LastCalculationBalanceDate = DateTime.Now.AddYears(-5);
-                }
+                var selectedPartner = await _appContext.Partner.FirstOrDefaultAsync(x => x.Id == partnerId);
+                if (selectedPartner == null) return NotFound("Partner not found");
+                if (selectedPartner.AMPECOId == null) return BadRequest("Partner missing AMPECOId");
 
-                string initialUrl = $"https://shabikuae.eu.charge.ampeco.tech/public-api/resources/partner-expenses/v1.1?filter[partnerId]={selectedPartner.AMPECOId}&filter[dateBefore]={DateTime.Now}&filter[dateAfter]={selectedPartner.LastCalculationBalanceDate}";
+                var nowUtc = DateTime.UtcNow;
 
-                List<AMPECOPartnerExpense> allReports = await apiService.GetAllPaginatedDataAsync<AMPECOPartnerExpense>(initialUrl, _token);
+                // 1) HISTORICAL (DB rollup) — WITHOUT tax
+                var historyWithoutTax = await _appContext.PartnerMonthlyCalculationTransactions
+                    .Where(x => x.PartnerId == partnerId
+                                && x.IsActive
+                                && x.MonthValue < MonthHelpers.ToYYYYMM(nowUtc))
+                    .SumAsync(x => (decimal?)x.TotalAmount) ?? 0m;
+
+                // 2) CURRENT MONTH (two-window strategy)
+                var currentMonthReports = await Helper.AmpecoExpenseFetcher.FetchCurrentMonthTwoWindowAsync(
+                    apiService,
+                    ampecoPartnerId: selectedPartner.AMPECOId,
+                    token: _token,
+                    nowUtcOverride: nowUtc,
+                    baseAddress: httpClient.BaseAddress);
+
                 if (!showAllExpenses)
                 {
-                    var allNewPayments = _appContext.PartnerPayment.Where(x => x.PartnerId == partnerId).ToList();
+                    var currentMonthWithoutTax = currentMonthReports.Sum(r => r.TotalAmount?.WithoutTax ?? 0m);
+                    var allExpensesWithoutTax = historyWithoutTax + currentMonthWithoutTax;
+                    var allExpensesWithTax = allExpensesWithoutTax * 1.05m;
 
-                    decimal newPaymentsBalance = allNewPayments?.Sum(x => x.PaymentAmount) ?? 0;
-                    decimal? initialBalanceAmount = selectedPartner.InitialBalanceAmount ?? 0;
+                    var allNewPayments = await _appContext.PartnerPayment
+                        .Where(x => x.PartnerId == partnerId)
+                        .ToListAsync();
 
-                    decimal allPartnerBalance = newPaymentsBalance + initialBalanceAmount.Value;
+                    decimal newPaymentsBalance = allNewPayments?.Sum(x => x.PaymentAmount) ?? 0m;
+                    decimal initialBalanceAmount = selectedPartner.InitialBalanceAmount ?? 0m;
+                    decimal allPartnerBalance = newPaymentsBalance + initialBalanceAmount;
 
-                    decimal totalWithoutTax = allReports.Sum(r => r.TotalAmount?.WithoutTax ?? 0);
+                    selectedPartner.LastCalculationBalanceDate = nowUtc;
+                    selectedPartner.BalanceAmount = allPartnerBalance - allExpensesWithTax;
 
-                    selectedPartner.LastCalculationBalanceDate = DateTime.Now;
-                    selectedPartner.BalanceAmount = allPartnerBalance - totalWithoutTax * 1.05m;
                     _appContext.Partner.Update(selectedPartner);
                     await _appContext.SaveChangesAsync();
+
+                    // upsert running total for current month (WITHOUT tax)
+                    var yyyymm = MonthHelpers.ToYYYYMM(nowUtc);
+                    var existing = await _appContext.PartnerMonthlyCalculationTransactions
+                        .FirstOrDefaultAsync(x => x.PartnerId == partnerId && x.MonthValue == yyyymm);
+
+                    if (existing == null)
+                    {
+                        _appContext.PartnerMonthlyCalculationTransactions.Add(new PartnerMonthlyCalculationTransaction
+                        {
+                            PartnerId = partnerId,
+                            MonthValue = yyyymm,
+                            TotalAmount = currentMonthWithoutTax,
+                            IsActive = true
+                        });
+                    }
+                    else
+                    {
+                        existing.TotalAmount = currentMonthWithoutTax;
+                        existing.IsActive = true;
+                        _appContext.PartnerMonthlyCalculationTransactions.Update(existing);
+                    }
+                    await _appContext.SaveChangesAsync();
                 }
-                return Ok(allReports);
+
+                // Return only current month items (two-window union)
+                return Ok(currentMonthReports);
             }
             catch (Exception ex)
             {
-                FileLogger.WriteLog($"SessionsRawData \nMessage: {ex.Message}\n InnerException: {ex.InnerException}");
+                FileLogger.WriteLog($"AmbecoPartnerExpenseData \nMessage: {ex.Message}\n InnerException: {ex.InnerException}");
                 return StatusCode(500, false);
             }
         }
+
+
+
 
         private async Task<IEnumerable<T>> GetResourcesDataEntity<T, TAMPECO, TService>(TService service) where TService : IAMPECOResource<TAMPECO>
         {

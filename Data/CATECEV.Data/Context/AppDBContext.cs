@@ -43,6 +43,8 @@ namespace CATECEV.Data.Context
         public DbSet<LocationAdditionalDescriptionLocalization> LocationAdditionalDescription { get; set; }
         public DbSet<LocationAddressLocalization> LocationAddress { get; set; }
         public DbSet<AuthorizationEntity> Authorization { get; set; }
+        public DbSet<PartnerMonthlyCalculationTransaction> PartnerMonthlyCalculationTransactions { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -361,6 +363,26 @@ namespace CATECEV.Data.Context
                 entity.HasKey(e => e.Id);
             });
             #endregion
+
+            modelBuilder.Entity<PartnerMonthlyCalculationTransaction>(entity =>
+            {
+                entity.ToTable("PartnerMonthlyCalculationTransactions"); // default schema (dbo)
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+                entity.Property(e => e.CreatedOn)
+                      .HasColumnType("datetime2(7)")
+                      .HasDefaultValueSql("SYSUTCDATETIME()");
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+                // enforce one row per partner per month
+                entity.HasIndex(e => new { e.PartnerId, e.MonthValue }).IsUnique();
+
+                 entity.HasOne<Partner>()
+                       .WithMany()
+                       .HasForeignKey(e => e.PartnerId)
+                       .OnDelete(DeleteBehavior.Restrict);
+            });
         }
     }
 }
