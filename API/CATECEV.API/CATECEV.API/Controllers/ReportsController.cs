@@ -442,6 +442,7 @@ namespace CATECEV.API.Controllers
         {
             try
             {
+
                 var httpClient = new HttpClient
                 {
                     BaseAddress = new Uri("https://shabikuae.eu.charge.ampeco.tech")
@@ -471,6 +472,7 @@ namespace CATECEV.API.Controllers
 
                 if (!showAllExpenses)
                 {
+
                     var currentMonthWithoutTax = currentMonthReports.Sum(r => r.TotalAmount?.WithoutTax ?? 0m);
                     var allExpensesWithoutTax = historyWithoutTax + currentMonthWithoutTax;
                     var allExpensesWithTax = allExpensesWithoutTax * 1.05m;
@@ -518,6 +520,8 @@ namespace CATECEV.API.Controllers
             }
             catch (Exception ex)
             {
+                FileLogger.WriteLog($"AmbecoPartnerExpenseData eeeeeeeeeeeeeee");
+
                 FileLogger.WriteLog($"AmbecoPartnerExpenseData \nMessage: {ex.Message}\n InnerException: {ex.InnerException}");
                 return StatusCode(500, false);
             }
