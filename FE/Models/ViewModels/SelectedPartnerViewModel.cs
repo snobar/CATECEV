@@ -8,6 +8,8 @@
         public string Email { get; set; }        
         public string Mobile { get; set; }      
         public decimal BalanceAmount { get; set; }
+        public decimal TotalBalanceAmount { get; set; }
+        
         public DateTime? LastCalculationBalanceDate { get; set; }
     }
 

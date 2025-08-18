@@ -5,6 +5,44 @@
 @{
     ViewData["Title"] = "Partners";
 }
+
+@section Scripts {
+    <script>
+        function refreshPartner(id, btn) {
+            var $icon = $(btn).find('i');
+            var $successMsg = $(btn).closest('td').find('.refresh-success');
+
+            $icon.addClass('fa-spin');
+            $successMsg.hide();
+
+            $.ajax({
+                url: '@Url.Action("RefreshBalance", "Data")',
+                type: 'GET',
+                data: { id: id },
+                success: function (res) {
+                    $icon.removeClass('fa-spin');
+                    if (res.success) {
+                        // Update balance in the same row
+                        $(btn).closest('tr').find('.balance-amount').text(res.newBalance);
+                        $successMsg.fadeIn().delay(2000).fadeOut();
+                         setTimeout(function () {
+                         location.reload();
+        }, 1000);
+
+                    } else {
+                        alert("Failed to refresh balance.");
+                    }
+                },
+                error: function () {
+                    $icon.removeClass('fa-spin');
+                    alert("Error contacting server.");
+                }
+            });
+        }
+
+    </script>
+}
+
 <style>
     table {
         font-size: 11px;
@@ -17,11 +55,31 @@
         }
 </style>
 <h2>Partner List</h2>
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Message"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="mb-3">
+    <a asp-action="RefreshPartners" class="btn btn-secondary btn-sm">
+        🔄 Refresh List From Ambeco
+    </a>
+</div>
 
 <table class="table table-bordered">
     <thead>
         <tr>
             <th>Name</th>
+            <th>Email</th>
+            <th>Mobile</th>
             <th>Balance Amount</th>
             <th>Last Calculation Date</th>
             <th>Action</th>
@@ -32,6 +90,8 @@
         {
             <tr>
                 <td>@item.Name</td>
+                <td>@item.Email</td>
+                <td>@item.Phone</td>
                 <td>@item.BalanceAmount.ToString()</td>
                 <td>
                     @(item.LastCalculationBalanceDate == DateTime.MinValue
@@ -40,6 +100,14 @@
                 </td>
                 <td>
                     <div class="d-flex flex-column flex-sm-row gap-1">
+                        <a href="javascript:void(0);" title="Refresh Amount Balance"
+                           class="btn btn-outline-secondary btn-sm ms-2"
+                           style="font-size: 10px;"
+                           onclick="refreshPartner('@item.EncryptedId', this)">
+                            <i class="fas fa-sync-alt"></i>
+                        </a>
+                        <span class="refresh-success text-success fw-bold" style="display:none;">✔ Refreshed</span>
+
                         <a asp-action="Manage" asp-route-id="@item.EncryptedId"
                            class="btn btn-primary flex-fill text-white btn-sm"
                            style="font-size: 10px;">

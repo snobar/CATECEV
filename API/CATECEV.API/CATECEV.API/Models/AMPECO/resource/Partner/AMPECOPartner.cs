@@ -12,6 +12,8 @@
         public string City { get; set; }
         public string Postcode { get; set; }
         public string Address { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
         public DateTime LastUpdatedAt { get; set; }
         public Options Options { get; set; }
         public CorporateBilling CorporateBilling { get; set; }

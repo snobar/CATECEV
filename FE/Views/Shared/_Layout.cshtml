@@ -11,7 +11,7 @@
     <link href="~/css/site.css" rel="stylesheet" />
     <link href="~/css/_layout.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-  
+
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <style>
@@ -86,9 +86,38 @@
             font-size: 12px !important;
             line-height: 1.2 !important;
         }
+
+        #pageOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .overlay-hidden {
+            display: none !important;
+        }
     </style>
+
+
 </head>
 <body>
+    <div id="pageOverlay" class="overlay-hidden">
+        <div class="spinner-border text-light" role="status"></div>
+        <div style="margin-top: 12px;">Please wait...</div>
+        <div style="font-size: 1rem; margin-top: 6px;">We’re preparing your information</div>
+    </div>
+
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -105,6 +134,7 @@
         <main role="main" class="container pb-3">
             <div class="border p-2">
                 @RenderBody()
+
             </div>
         </main>
     </div>
@@ -115,10 +145,54 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-  
+
     <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const overlay = document.getElementById("pageOverlay");
+
+          // Hide loader after full page load
+          window.addEventListener("load", function () {
+            overlay?.classList.add("overlay-hidden");
+          });
+
+          // Show loader on navigation (click)
+          document.querySelectorAll("a[href]").forEach(function (link) {
+            link.addEventListener("click", function (e) {
+              const href = link.getAttribute("href");
+              const target = link.getAttribute("target");
+
+              if (!href || href === "#" || href.startsWith("javascript") || target === "_blank" || link.classList.contains("no-loader")) {
+                return;
+              }
+
+              e.preventDefault();
+              overlay?.classList.remove("overlay-hidden");
+
+              setTimeout(() => {
+                window.location.href = href;
+              }, 100);
+            });
+          });
+
+          // Show loader on form submit
+          document.querySelectorAll("form").forEach(function (form) {
+            form.addEventListener("submit", function () {
+              overlay?.classList.remove("overlay-hidden");
+            });
+          });
+
+          // Show loader on hard refresh or tab close
+          window.addEventListener("beforeunload", function () {
+            overlay?.classList.remove("overlay-hidden");
+          });
+        });
+    </script>
+
+
+
 </body>
 </html>

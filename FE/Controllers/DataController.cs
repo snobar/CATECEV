@@ -12,6 +12,7 @@ using MimeKit;
 using Humanizer;
 using System.Net.Http;
 using Newtonsoft.Json;
+using CATECEV.Models.Entity.AMPECO.Resources.AmbPartner;
 
 namespace CATECEV.FE.Controllers
 {
@@ -59,7 +60,10 @@ namespace CATECEV.FE.Controllers
                 Name = p.Name,
                 RegNo = p.RegNo,
                 BalanceAmount = p.BalanceAmount,
+                Email = p.Email,
+                Phone = p.Phone,
                 LastCalculationBalanceDate = p.LastCalculationBalanceDate,
+                InitialBalanceAmount = p.InitialBalanceAmount ?? 0,
                 EncryptedId = ShortEncryptor.Encrypt(p.Id)
             }).ToList();
 
@@ -109,7 +113,7 @@ namespace CATECEV.FE.Controllers
                     Value = p.Id.ToString(),
                     Text = p.Name
                 }).ToList(),
-                SelectedPartner  = new SelectedPartnerViewModel
+                SelectedPartner = new SelectedPartnerViewModel
                 {
                     Id = selectedPartner.Id,
                     Name = selectedPartner.Name,
@@ -117,7 +121,8 @@ namespace CATECEV.FE.Controllers
                     BalanceAmount = selectedPartner.BalanceAmount,
                     LastCalculationBalanceDate = selectedPartner.LastCalculationBalanceDate,
                     Email = selectedPartner.Email,
-                    Mobile = selectedPartner.Phone
+                    Mobile = selectedPartner.Phone,
+                    TotalBalanceAmount = selectedPartner.InitialBalanceAmount ?? 0
                 },
                 PartnerExpenses = expenses,
                 PartnerPayments = payments
@@ -151,7 +156,7 @@ namespace CATECEV.FE.Controllers
             _appContext.Partner.Update(partnerdata);
 
             _appContext.SaveChanges();
-            await GetPartnerExpense(partnerId, true);
+        //    await GetPartnerExpense(partnerId, true);
 
             var partnerName = _appContext.Partner.Find(partnerId)?.Name;
 
@@ -162,7 +167,8 @@ namespace CATECEV.FE.Controllers
                 {
                     partnerName,
                     paymentAmount = model.NewPayment.PaymentAmount,
-                    date = model.NewPayment.PaymentDate.ToShortDateString()
+                    date = model.NewPayment.PaymentDate.ToShortDateString(),
+                    paymentId = payment.Id
                 }
             });
         }
@@ -178,9 +184,11 @@ namespace CATECEV.FE.Controllers
             partner.LastCalculationBalanceDate = model.LastCalculationBalanceDate.Value;
             partner.Email = model.Email;
             partner.Phone = model.Mobile;
+            partner.InitialBalanceAmount = model.TotalBalanceAmount;
+
             _appContext.SaveChanges();
 
-            TempData["SuccessMsg"] = "Partner balance updated successfully.";
+            TempData["SuccessMsg"] = "Partner information updated successfully.";
             return RedirectToAction("Manage", new { id = ShortEncryptor.Encrypt(model.Id) });
         }
 
@@ -207,6 +215,62 @@ namespace CATECEV.FE.Controllers
                 newBalance = newBalance
             });
         }
+
+        public async Task<IActionResult> RefreshPartners()
+        {
+            string baseUrl = _configuration["ServiceEndpoints:AmpecoApi"];
+            string url = $"{baseUrl}/AmbecoPartnerData";
+
+            var client = _httpClientFactory.CreateClient();
+
+            try
+            {
+                var response = await client.GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var partners = JsonConvert.DeserializeObject<List<PartnerListItem>>(json);
+
+                    // TODO: Save or update partners in your database here, if needed
+
+                    TempData["Message"] = "Partners refreshed successfully.";
+                }
+                else
+                {
+                    TempData["Error"] = $"API call failed: {response.StatusCode}";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Exception: {ex.Message}";
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public JsonResult DeletePayment(int paymentId)
+        {
+            var payment = _appContext.PartnerPayment.FirstOrDefault(p => p.Id == paymentId);
+            if (payment == null)
+                return Json(new { success = false, message = "Payment not found." });
+
+            var partner = _appContext.Partner.FirstOrDefault(x => x.Id == payment.PartnerId);
+            if (partner == null)
+                return Json(new { success = false, message = "Associated partner not found." });
+
+            // Remove the payment and update partner balance
+            _appContext.PartnerPayment.Remove(payment);
+            partner.BalanceAmount = partner.BalanceAmount - payment.PaymentAmount;
+            _appContext.Partner.Update(partner);
+
+            _appContext.SaveChanges();
+
+            return Json(new { success = true });
+        }
+
+
+
 
         [HttpGet]
         public async Task<IActionResult> LoadPartnerBasket(int partnerId)

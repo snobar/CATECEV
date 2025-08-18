@@ -24,6 +24,8 @@ namespace CATECEV.Models.Entity.AMPECO.Resources.AmbPartner
         public DateTime LastUpdatedAt { get; set; }
         public decimal MonthlyPlatformFee { get; set; }
         public decimal BalanceAmount { get; set; }
+        public decimal? InitialBalanceAmount { get; set; }
+
         public DateTime LastCalculationBalanceDate { get; set; }
         public PartnerOptions Options { get; set; }
         public CorporateBilling CorporateBilling { get; set; }

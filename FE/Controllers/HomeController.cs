@@ -39,6 +39,13 @@ namespace CATECEV.FE.Controllers
             return View();
         }
 
+
+        public ActionResult Maintenance()
+        {
+            return View();
+        }
+
+
         [HttpGet]
         public async Task<IActionResult> RefreshBalance(string id)
         {
@@ -64,6 +71,13 @@ namespace CATECEV.FE.Controllers
 
         public async Task<IActionResult> ViewInfo(string id)
         {
+            var isUnderMaintenance = _configuration.GetValue<bool>("SiteSettings:IsUnderMaintenance");
+
+            if (isUnderMaintenance)
+            {
+                return View("~/Views/Shared/Maintenance.cshtml"); // or wherever your view is
+            }
+
             int partnerId;
             try
             {
@@ -110,7 +124,8 @@ namespace CATECEV.FE.Controllers
                     BalanceAmount = selectedPartner.BalanceAmount,
                     LastCalculationBalanceDate = selectedPartner.LastCalculationBalanceDate,
                     Email = selectedPartner.Email,
-                    Mobile = selectedPartner.Phone
+                    Mobile = selectedPartner.Phone,
+                    TotalBalanceAmount = selectedPartner.InitialBalanceAmount ?? 0
                 },
                 PartnerExpenses = expenses,
                 PartnerPayments = payments

@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
-
+using System.Linq;
 namespace CATECEV.API.Controllers
 {
     [Route("api/[controller]")]
@@ -416,7 +416,7 @@ namespace CATECEV.API.Controllers
                     var allPartnerGroupEntity = await _appContext.Partner.Where(x => x.IsActive).ToListAsync();
                     var allPartnerEntityDictionary = allPartnerGroupEntity.ToDictionary(x => x.AMPECOId);
 
-                    var filterdPartnerEntity = mappedData.Where(x => !allPartnerEntityDictionary.ContainsKey(x.AMPECOId));
+                    var filterdPartnerEntity = mappedData.Where(x => !allPartnerEntityDictionary.ContainsKey(x.AMPECOId) && x.CorporateBilling.Enabled);
 
                     if (filterdPartnerEntity.IsNotNullOrEmpty())
                     {
@@ -443,20 +443,27 @@ namespace CATECEV.API.Controllers
                 var apiService = new ApiService(httpClient);
 
                 var selectedPartner = _appContext.Partner.FirstOrDefault(x => x.Id == partnerId);
-                if (selectedPartner != null && (selectedPartner.LastCalculationBalanceDate == DateTime.MinValue || showAllExpenses))
+                if (selectedPartner != null)
                 {
-                    selectedPartner.LastCalculationBalanceDate = showAllExpenses ? DateTime.Now.AddYears(-5) : DateTime.Now;
+                    selectedPartner.LastCalculationBalanceDate = DateTime.Now.AddYears(-5);
                 }
-               
+
                 string initialUrl = $"https://shabikuae.eu.charge.ampeco.tech/public-api/resources/partner-expenses/v1.1?filter[partnerId]={selectedPartner.AMPECOId}&filter[dateBefore]={DateTime.Now}&filter[dateAfter]={selectedPartner.LastCalculationBalanceDate}";
 
                 List<AMPECOPartnerExpense> allReports = await apiService.GetAllPaginatedDataAsync<AMPECOPartnerExpense>(initialUrl, _token);
                 if (!showAllExpenses)
                 {
+                    var allNewPayments = _appContext.PartnerPayment.Where(x => x.PartnerId == partnerId).ToList();
+
+                    decimal newPaymentsBalance = allNewPayments?.Sum(x => x.PaymentAmount) ?? 0;
+                    decimal? initialBalanceAmount = selectedPartner.InitialBalanceAmount ?? 0;
+
+                    decimal allPartnerBalance = newPaymentsBalance + initialBalanceAmount.Value;
+
                     decimal totalWithoutTax = allReports.Sum(r => r.TotalAmount?.WithoutTax ?? 0);
 
                     selectedPartner.LastCalculationBalanceDate = DateTime.Now;
-                    selectedPartner.BalanceAmount -= totalWithoutTax;
+                    selectedPartner.BalanceAmount = allPartnerBalance - totalWithoutTax * 1.05m;
                     _appContext.Partner.Update(selectedPartner);
                     await _appContext.SaveChangesAsync();
                 }
