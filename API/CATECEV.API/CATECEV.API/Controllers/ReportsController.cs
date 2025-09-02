@@ -455,6 +455,19 @@ namespace CATECEV.API.Controllers
 
                 var nowUtc = DateTime.UtcNow;
 
+
+                var prevMonthUtc = new DateTime(nowUtc.AddMonths(-1).Year, nowUtc.AddMonths(-1).Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var prevMonthYYYYMM = MonthHelpers.ToYYYYMM(prevMonthUtc);
+
+                bool prevExists = await _appContext.PartnerMonthlyCalculationTransactions
+                    .AnyAsync(x => x.PartnerId == partnerId && x.MonthValue == prevMonthYYYYMM);
+
+                // Use your existing backfill service to write the missing month.
+                var backfill = new PartnerMonthlyBackfill(_appContext, apiService, _token);
+                await backfill.RunAsync(partnerId, prevMonthUtc);
+
+
+
                 // 1) HISTORICAL (DB rollup) — WITHOUT tax
                 var historyWithoutTax = await _appContext.PartnerMonthlyCalculationTransactions
                     .Where(x => x.PartnerId == partnerId
@@ -463,7 +476,7 @@ namespace CATECEV.API.Controllers
                     .SumAsync(x => (decimal?)x.TotalAmount) ?? 0m;
 
                 // 2) CURRENT MONTH (two-window strategy)
-                var currentMonthReports = await Helper.AmpecoExpenseFetcher.FetchCurrentMonthTwoWindowAsync(
+                var currentMonthReports = await Helper.AmpecoExpenseFetcher.FetchCurrentMonthDailyAsync(
                     apiService,
                     ampecoPartnerId: selectedPartner.AMPECOId,
                     token: _token,

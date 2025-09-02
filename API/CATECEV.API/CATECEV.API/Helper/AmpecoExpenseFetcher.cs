@@ -10,14 +10,21 @@ namespace CATECEV.API.Helper
 {
     public static class AmpecoExpenseFetcher
     {
-        public static async Task<List<AMPECOPartnerExpense>> FetchCurrentMonthTwoWindowAsync(
+        /// <summary>
+        /// Fetches all partner expenses for the current month by querying one day at a time.
+        /// Each day window is [dayStart, nextDay), at UTC midnight boundaries.
+        /// </summary>
+        public static async Task<List<AMPECOPartnerExpense>> FetchCurrentMonthDailyAsync(
             ApiService apiService,
             int ampecoPartnerId,
             string token,
             DateTime? nowUtcOverride = null,
-            Uri baseAddress = null)
+            Uri baseAddress = null,
+            int pageSize = 100,
+            bool includeFutureDaysThisMonth = false) // false = stop at "tomorrow"; true = iterate to month end
         {
             if (apiService == null) throw new ArgumentNullException(nameof(apiService));
+            if (pageSize <= 0) pageSize = 100;
 
             var baseUrl = (baseAddress ?? new Uri("https://shabikuae.eu.charge.ampeco.tech"))
                           .ToString().TrimEnd('/');
@@ -26,48 +33,53 @@ namespace CATECEV.API.Helper
 
             // Month bounds at UTC midnight
             var monthStartUtc = new DateTime(nowUtc.Year, nowUtc.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            var todayStartUtc = new DateTime(nowUtc.Year, nowUtc.Month, nowUtc.Day, 0, 0, 0, DateTimeKind.Utc);
-            var tomorrowUtc = todayStartUtc.AddDays(1);
 
-            // Clamp recent-from so it never goes before the 1st of this month
-            var recentFromUtc = todayStartUtc.AddDays(-2);
-            if (recentFromUtc < monthStartUtc) recentFromUtc = monthStartUtc;
+            // End bound:
+            // - If includeFutureDaysThisMonth=false: stop at "tomorrow" (so we include full "today")
+            // - If true: go to first day of next month
+            var tomorrowUtc = new DateTime(nowUtc.Year, nowUtc.Month, nowUtc.Day, 0, 0, 0, DateTimeKind.Utc).AddDays(1);
+            var monthEndExclusiveUtc = includeFutureDaysThisMonth
+                ? monthStartUtc.AddMonths(1)
+                : tomorrowUtc;
 
-            // Early-month window: [monthStart, recentFrom) — may be empty in first 2 days
-            var earlyStartUtc = monthStartUtc;
-            var earlyEndUtc = recentFromUtc;      // exclusive
+            // Clamp end not to precede start (shouldn’t happen, but safe)
+            if (monthEndExclusiveUtc <= monthStartUtc)
+                monthEndExclusiveUtc = monthStartUtc.AddDays(1);
 
-            // Recent window: [recentFrom, tomorrow) — includes full "today"
-            var recentEndUtc = tomorrowUtc;        // exclusive
+            var all = new List<AMPECOPartnerExpense>();
 
-            // Build URLs (ApiService normalizes to Z and follows pagination)
-            string earlyUrl =
-                $"{baseUrl}/public-api/resources/partner-expenses/v1.1" +
-                $"?filter[partnerId]={ampecoPartnerId}" +
-                $"&filter[dateAfter]={earlyStartUtc:yyyy-MM-dd}" +
-                $"&filter[dateBefore]={earlyEndUtc:yyyy-MM-dd}" +
-                $"&page[size]=100";
-
-            string recentUrl =
-                $"{baseUrl}/public-api/resources/partner-expenses/v1.1" +
-                $"?filter[partnerId]={ampecoPartnerId}" +
-                $"&filter[dateAfter]={recentFromUtc:yyyy-MM-dd}" +
-                $"&filter[dateBefore]={recentEndUtc:yyyy-MM-dd}" +
-                $"&page[size]=100";
-
-            var result = new List<AMPECOPartnerExpense>();
-
-            // Only call the early window if it’s non-empty
-            if (earlyEndUtc > earlyStartUtc)
+            // Iterate one day at a time
+            for (var dayStart = monthStartUtc; dayStart < monthEndExclusiveUtc; dayStart = dayStart.AddDays(1))
             {
-                var early = await apiService.GetAllPaginatedDataAsync<AMPECOPartnerExpense>(earlyUrl, token);
-                result.AddRange(early);
+                var dayEnd = dayStart.AddDays(1);
+                if (dayEnd > monthEndExclusiveUtc) dayEnd = monthEndExclusiveUtc;
+
+                // Build daily URL
+                var url =
+                    $"{baseUrl}/public-api/resources/partner-expenses/v1.1" +
+                    $"?filter[partnerId]={ampecoPartnerId}" +
+                    $"&filter[dateAfter]={dayStart:yyyy-MM-dd}" +
+                    $"&filter[dateBefore]={dayEnd:yyyy-MM-dd}" +
+                    $"&page[size]={pageSize}";
+
+                // Fetch all pages for the day
+                List<AMPECOPartnerExpense> daily = null;
+                try
+                {
+                    daily = await apiService.GetAllPaginatedDataAsync<AMPECOPartnerExpense>(url, token);
+                }
+                catch (Exception ex)
+                {
+                    // Optional: log and continue to next day
+                    Console.Error.WriteLine($"Failed fetching {dayStart:yyyy-MM-dd}: {ex.Message}");
+                }
+
+                if (daily is { Count: > 0 })
+                    all.AddRange(daily);
             }
 
-            var recent = await apiService.GetAllPaginatedDataAsync<AMPECOPartnerExpense>(recentUrl, token);
-            result.AddRange(recent);
-
-            return result;
+            return all;
         }
     }
+
 }
